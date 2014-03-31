@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Force Editor</title>
+<script src="lib/d3.js"></script>
+<style>
+
+  html {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+  }
+
+  body {
+      font: 13px sans-serif;
+      position: relative;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+  }
+
+.entity {
+  fill: #000;
+  cursor: move;
+}
+
+.node_selected {
+  fill: #ff7f0e;
+  stroke: #ff7f0e;
+}
+
+.drag_line {
+  stroke: #999;
+  stroke-width: 5;
+  pointer-events: none;
+}
+
+.drag_line_hidden {
+  stroke: #999;
+  stroke-width: 0;
+  pointer-events: none;
+}
+
+.link {
+  stroke: #999;
+  stroke-width: 5;
+  cursor: crosshair;
+}
+
+.link_selected {
+  stroke: #ff7f0e;
+}
+
+.entity .text {
+  font-family: '"Helvetica Neue", Helvetica, Arial, sans-serif';
+  font-size: 15px;
+  fill: white;
+}
+
+.chart {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;  
+}
+
+.chart > svg {
+    width: 100%;
+    height: 100%;
+}
+
+</style>
+</head>
+<body>
+  <div id="chart" class="chart">
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid slice" viewBox="-600 -600 1200 1200">
+      <defs>
+        <linearGradient id="entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:rgb(32,32,192);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgb(16,16,128);stop-opacity:1" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+<script src="graph.js"></script>
+</body>
+</html>
