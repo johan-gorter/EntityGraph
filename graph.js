@@ -9,16 +9,8 @@ var entityData = [
 var linkData = [];
 
 // init svg
-var div = d3.select("#chart")
-    .call(d3.behavior.zoom().on("zoom", rescale));
-var outer = d3.select("#chart svg")
-    .attr("pointer-events", "all");
-
-var vis = outer
-  .append('svg:g')
-	.call(d3.behavior.drag().on("drag", drag))
-  .append('svg:g');
-
+d3.select("#background").call(d3.behavior.zoom().on("zoom", rescale));
+var visualization = d3.select('#visualization');
 
 // init force layout
 var force = d3.layout.force()
@@ -31,32 +23,16 @@ var force = d3.layout.force()
 
 var drag = force.drag()
   .on("drag", function (d, i) {
-    d.fixed = true;
-    d.x = d3.event.x;
-    d.y = d3.event.y;
-    //force.resume();
-    //    var xy = toSVGCoordinates([d3.event.x, d3.event.y]);
-    //    d.x = xy[0];
-    //    d.y = xy[1];
-    //    var ratio = getLocalToSVGRatio();
-    //    console.log("event dx:" + d3.event.dx + " dy:" + d3.event.dy, d3.event);
-    //    d.x += d3.event.dx * ratio;
-    //    d.y += d3.event.dy * ratio;
-    d3.select(this)
-      .attr("x", function (d) { return d.x - 100; })
-      .attr("y", function (d) { return d.y - 20; });
+    force.resume();
   }).on("dragstart", function (d) {
-    console.log("dragstart", d3.event);
-    d3.event.sourceEvent.stopPropagation(); // silence other listeners
-    d.fixed = true;
+//    d3.event.sourceEvent.stopPropagation(); // silence other listeners
   }).on("dragend", function (d) {
-    d.fixed = false;
+    force.resume();
   });
 
-
 // get layout properties
-var entity = vis.selectAll(".entity").data(entityData),
-      link = vis.selectAll(".link").data(linkData);
+var entity = visualization.selectAll(".entity").data(entityData);
+var link = visualization.selectAll(".link").data(linkData);
 
 function tick() {
   link
@@ -66,8 +42,8 @@ function tick() {
     .attr("y2", function(d) { return d.target.y; });
 
   entity
-    .attr("x", function (d) { return d.x-100; })
-    .attr("y", function (d) { return d.y-20; });
+    .attr("x", function (d) { return d.x-100-600; })
+    .attr("y", function (d) { return d.y-20-600; });
 }
 
 function getLocalToSVGRatio() {
@@ -87,42 +63,35 @@ function toSVGCoordinates(xy) {
   return result;
 };
 
-function fromVisibleTopLeft(xy, scale) {
-  var topLeft = toSVGCoordinates([0, 0]);
-  return [xy[0] - topLeft[0]*scale, xy[1] - topLeft[1]*scale];
-}
-
 function rescale() {
   var trans=d3.event.translate;
   var scale=d3.event.scale;
-
-  vis
+  visualization
     .attr("transform",
-      "translate(" + fromVisibleTopLeft(toSVGCoordinates(trans), scale) + ")"
+      "translate(" + trans + ")"
       + " scale(" + scale + ")");
 }
 
 var enteringEntity = entity.enter().insert("svg:svg")
-    .attr("class", "entity")
-    .attr("width", 200)
-    .attr("height", 40)
-   	.call(drag);
-
+  .attr("class", "entity")
+  .attr("width", 200)
+  .attr("height", 40)
+  .call(drag);
     
 enteringEntity.append("rect")
-    .attr("width", 200)
-    .attr("height", 40)
-    .attr("rx", 5)
-    .attr("ry", 5)
-	  .attr("fill","url(#entity-gradient)");
+  .attr("width", 200)
+  .attr("height", 40)
+  .attr("rx", 5)
+  .attr("ry", 5)
+  .attr("fill","url(#entity-gradient)");
 
 enteringEntity.append("svg:text")
-    .attr("class", "text")
-	  .attr("x", 5)
-    .attr("y", 9)
-    .attr("dy", 15)
-	.attr("color", "white")
-    .text(function(d) { return d.text; });
+  .attr("class", "text")
+  .attr("x", 5)
+  .attr("y", 9)
+  .attr("dy", 15)
+  .attr("color", "white")
+  .text(function(d) { return d.text; });
     
 entity.exit().remove();
 
