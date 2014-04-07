@@ -54,11 +54,11 @@
   stroke: #ff7f0e;
 }
 
-.entity .text {
-  font-family: '"Helvetica Neue", Helvetica, Arial, sans-serif';
-  font-size: 15px;
-  fill: white;
-}
+  .entity .text {
+    font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+    font-size: 15px;
+    fill: white;
+  }
 
 .chart {
     position: absolute;
@@ -85,7 +85,23 @@
             </linearGradient>
         </defs>
         <rect x="-600" y="-600" width="1200" height="1200" fill="transparent" id="background" />
-        <g id="visualization"></g>
+        <g id="visualization">
+            <g id="links">
+            </g>
+            <g id="entities">
+            </g>
+            <g id="focus" transform="translate(0,0)">
+              <rect id="focus-border" x="-100" y="-25" width="200" height="50" fill="none" stroke-width="2" stroke="orange" rx="15" ry="15" pointer-events="none" />
+              <g id="focus-off" transform="translate(-80,-50)">
+                <circle cx="0" cy="0" r="20" fill="none" stroke-width="2" stroke="orange" />
+                <path fill="none" stroke-width="4" stroke="orange" d="M-10,-10 l20,20 M-10,10 l 20, -20" />
+              </g>
+              <g id="focus-expand" transform="translate(80,-50)">
+                <circle cx="0" cy="0" r="20" fill="none" stroke-width="2" stroke="orange" />
+                <path fill="none" stroke-width="4" stroke="orange" d="M -10,0 l 20,0 M 0,-10 l 0,20" />
+              </g>
+            </g>
+        </g>
     </svg>
   </div>
 <script src="graph.js"></script>
