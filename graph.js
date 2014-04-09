@@ -205,5 +205,5 @@ if (modelUrl) {
   if(!/[\w\d\-\.]*/g.test(modelUrl)) {
     throw new Error("Not sure if url is an XSS attack: "+modelUrl);
   }
-  d3.select("body").append("<script src='"+modelUrl+"'></script>");
+  d3.select("body").append("script").attr("src", modelUrl);
 }

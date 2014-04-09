@@ -1,3 +1,7 @@
+alert("loading izzy");
+
+graphDataLoaded(
+
 {
 	"type": "Graph",
 	"id": "graph1",
@@ -69,3 +73,5 @@
 	},
 	"startNodeId": "EntityDesign_project"
 }
+
+);
