@@ -255,6 +255,7 @@ var graphDataLoaded = function (data) {
     startNode.x = 0;
     startNode.y = 0;
     visibleEntities.push(startNode);
+    force.nodes(visibleEntities);
     focus = startNode;
   }
   render();
