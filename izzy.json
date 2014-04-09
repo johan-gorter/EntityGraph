@@ -1,5 +1,3 @@
-alert("loading izzy");
-
 graphDataLoaded(
 
 {
