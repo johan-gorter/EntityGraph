@@ -35,6 +35,13 @@ var updateFocus = function () {
   }
 };
 
+function getQueryStringParameter(name) {
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+  var results = regex.exec(location.search);
+  return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
 var positionFocus = function () {
   focusElement.attr("transform", "translate(" + [focus.x - 600, focus.y - 600] + ")");
 };
@@ -192,3 +199,11 @@ enteringEntity.select("rect")
 entity.exit().remove();
 
 force.start();
+
+var modelUrl = getQueryStringParameter("model");
+if (modelUrl) {
+  if(!/[\w\d\-\.]*/g.test(modelUrl)) {
+    throw new Error("Not sure if url is an XSS attack: "+modelUrl);
+  }
+  d3.select("body").append("<script src='"+modelUrl+"'></script>");
+}
