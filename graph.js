@@ -4,8 +4,8 @@ var height = 1200;
 var repelDistance = 80;
 
 var graphData = { nodes: [], edges: [], startNodeId: null };
-var visibleEntities = [];
-var visibleLinks = [];
+var visibleEntities;
+var visibleLinks;
 var focus = null;
 
 // Elements
@@ -67,9 +67,11 @@ function rescale() {
       + " scale(" + scale + ")");
 }
 
-function showEntity(entity) {
+function showEntity(entity, pos) {
   if (!entity.visible) {
     entity.visible = true;
+    entity.x = entity.px = pos.x;
+    entity.y = entity.py = pos.y;
     visibleEntities.push(entity);
     entity.incomingEdges.forEach(function(edge){
       if (edge.target.visible) {
@@ -85,27 +87,36 @@ function showEntity(entity) {
 }
 
 function expand() {
-  focus.incomingEdges.forEach(function(edge){
-    showEntity(edge.source);
+  var pos = { x: focus.x, y: focus.y };
+  focus.incomingEdges.forEach(function (edge) {
+    pos.x++;
+    pos.y++;
+    showEntity(edge.source, focus);
   });
   focus.outgoingEdges.forEach(function(edge){
-    showEntity(edge.target);
+    pos.x++;
+    pos.y++;
+    showEntity(edge.target, focus);
   });
+  redraw();
+  force.resume();
 }
 
 // init svg
 d3.select("#background").call(d3.behavior.zoom().on("zoom", rescale));
 var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
+focusElement.
 
 // init force layout
 var force = d3.layout.force()
   .size([width, height])
-//  .nodes(visibleEntities)
-//  .links(linkData)
   .linkDistance(50)
   .charge(-200)
   .on("tick", tick);
+
+visibleEntities = force.nodes();
+visibleLinks = force.links();
 
 var drag = force.drag()
   .on("drag", function (d, i) {
@@ -126,11 +137,11 @@ var drag = force.drag()
 
 
 // get layout properties
-force
-  .nodes(visibleEntities)
-  .links(visibleLinks);
-var entity = visualization.select("#entities").selectAll(".entity");
-var link = visualization.select("#links").selectAll(".link");
+var entity;
+var link;
+
+var entitySelection = visualization.select("#entities").selectAll(".entity");
+var linkSelection = visualization.select("#links").selectAll(".link");
 
 function tick(e) {
   var k = 0.6 * e.alpha;
@@ -182,26 +193,23 @@ function tick(e) {
   }
 }
 
-var render = function() {
-  entity = entity.data(visibleEntities, function(d){return d.id});
-  link = link.data(visibleLinks, function(d){return d.id});
-  
-  force.nodes(visibleEntities);
-  force.links(visibleLinks);
+var redraw = function () {
+  entity = entitySelection.data(visibleEntities, function (d) { return d.id; });
+  link = linkSelection.data(visibleLinks, function (d) { return d.id; });
 
   var enteringEntity = entity.enter().insert("svg:svg")
     .attr("class", "entity")
     .attr("width", 200)
     .attr("height", 40)
     .call(drag);
-      
+
   enteringEntity.append("rect")
     .attr("width", 200)
     .attr("height", 40)
     .attr("rx", 10)
     .attr("ry", 10)
-    .attr("fill","url(#entity-gradient)");
-  
+    .attr("fill", "url(#entity-gradient)");
+
   enteringEntity.append("svg:text")
     .attr("class", "text")
     .attr("x", 10)
@@ -209,20 +217,20 @@ var render = function() {
     .attr("dy", 15)
     .attr("color", "white")
     .text(function (d) { return d.text; });
-  
+
   enteringEntity.select("rect")
     .attr("width", function (d) {
       var text = this.parentNode.lastChild;
       var textWidth = text.getComputedTextLength();
       d.width = Math.max(100, textWidth + 20);
       return d.width;
-  });
-  
+    });
+
   entity.exit().remove();
-  
+
   updateFocus();
   force.resume();
-}
+};
 
 var graphDataLoaded = function (data) {
   graphData = data;
@@ -244,24 +252,25 @@ var graphDataLoaded = function (data) {
       edge.source.outgoingEdges.push(edge);
       edge.target.incomingEdges.push(edge);
     });
-  }
-  visibleLinks.length=0;
-  visibleEntities.length=0;
+  };
+
+  visibleLinks.splice(0, visibleLinks.length);
+  visibleEntities.splice(0, visibleEntities.length);
   focus = null;
   if (graphData.startNodeId) {
     var startNode = graphData.nodesById[graphData.startNodeId];
     startNode.visible = true;
     startNode.selected = true;
-    startNode.x = 0;
-    startNode.y = 0;
+    startNode.x = startNode.px = 0;
+    startNode.y = startNode.py = 0;
     visibleEntities.push(startNode);
     force.nodes(visibleEntities);
     focus = startNode;
   }
-  render();
+  redraw();
 };
 
-render();
+redraw();
 
 force.start();
 
