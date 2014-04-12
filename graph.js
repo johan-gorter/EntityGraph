@@ -106,17 +106,16 @@ function expand() {
 d3.select("#background").call(d3.behavior.zoom().on("zoom", rescale));
 var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
-focusElement.
 
 // init force layout
 var force = d3.layout.force()
   .size([width, height])
-  .linkDistance(50)
+  .linkDistance(0)
   .charge(-200)
   .on("tick", tick);
 
 visibleEntities = force.nodes();
-visibleLinks = force.links();
+visibleLinks = [];
 
 var drag = force.drag()
   .on("drag", function (d, i) {
@@ -135,13 +134,8 @@ var drag = force.drag()
   updateFocus();
 });
 
-
-// get layout properties
-var entity;
-var link;
-
-var entitySelection = visualization.select("#entities").selectAll(".entity");
-var linkSelection = visualization.select("#links").selectAll(".link");
+var entity = visualization.select("#entities").selectAll(".entity");
+var link = visualization.select("#links").selectAll(".link");
 
 function tick(e) {
   var k = 0.6 * e.alpha;
@@ -194,8 +188,8 @@ function tick(e) {
 }
 
 var redraw = function () {
-  entity = entitySelection.data(visibleEntities, function (d) { return d.id; });
-  link = linkSelection.data(visibleLinks, function (d) { return d.id; });
+  entity = entity.data(visibleEntities, function (d) { return d.id; });
+  link = link.data(visibleLinks, function (d) { return d.id; });
 
   var enteringEntity = entity.enter().insert("svg:svg")
     .attr("class", "entity")
@@ -229,7 +223,7 @@ var redraw = function () {
   entity.exit().remove();
 
   updateFocus();
-  force.resume();
+  force.start();
 };
 
 var graphDataLoaded = function (data) {
