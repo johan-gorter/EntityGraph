@@ -67,6 +67,13 @@ function rescale() {
       + " scale(" + scale + ")");
 }
 
+function showEdge(edge) {
+  if (!edge.visible) {
+    edge.visible = true;
+    visibleLinks.push(edge);
+  }
+}
+
 function showEntity(entity, pos) {
   if (!entity.visible) {
     entity.visible = true;
@@ -75,12 +82,12 @@ function showEntity(entity, pos) {
     visibleEntities.push(entity);
     entity.incomingEdges.forEach(function(edge){
       if (edge.target.visible) {
-        visibleLinks.push(edge);
+        showEdge(edge);
       }
     });
     entity.outgoingEdges.forEach(function(edge){
       if (edge.source.visible) {
-        visibleLinks.push(edge);
+        showEdge(edge);
       }
     });
   }
@@ -91,12 +98,12 @@ function expand() {
   focus.incomingEdges.forEach(function (edge) {
     pos.x++;
     pos.y++;
-    showEntity(edge.source, focus);
+    showEntity(edge.source, pos);
   });
   focus.outgoingEdges.forEach(function(edge){
     pos.x++;
     pos.y++;
-    showEntity(edge.target, focus);
+    showEntity(edge.target, pos);
   });
   redraw();
   force.resume();
@@ -189,7 +196,6 @@ function tick(e) {
 
 var redraw = function () {
   entity = entity.data(visibleEntities, function (d) { return d.id; });
-  link = link.data(visibleLinks, function (d) { return d.id; });
 
   var enteringEntity = entity.enter().insert("svg:svg")
     .attr("class", "entity")
@@ -217,10 +223,16 @@ var redraw = function () {
       var text = this.parentNode.lastChild;
       var textWidth = text.getComputedTextLength();
       d.width = Math.max(100, textWidth + 20);
+      d.height = 40;
       return d.width;
     });
 
   entity.exit().remove();
+
+  link = link.data(visibleLinks, function (d) { return d.id; });
+
+  link.enter().insert("path")
+    .attr("class", "link");
 
   updateFocus();
   force.start();
