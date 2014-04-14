@@ -1,11 +1,154 @@
 /// <reference path="lib/d3.js" />
+
+// constants
 var width = 1200;
 var height = 1200;
 var repelDistance = 80;
+var pinPath = "M150.061,232.739l-67.232,67.868  c-3.363,3.267-5.453,7.898-5.453,12.991c0,9.991,8.083,18.173,17.989,18.173h127.379" +
+  "V445.34c0,12.536,10.177,22.711,22.713,22.711  c12.537,0,22.715-10.175,22.715-22.711V331.771h136.46c9.899,0,17.992-8.182,17.992-18.173" +
+  "c0-4.993-2.006-9.536-5.269-12.811  l-67.417-68.143V77.375h13.631c12.535,0,22.715-10.177,22.715-22.713c0-12.536-10.18-22.713-22.715-22.713" +
+  "H136.432  c-12.536,0-22.713,10.177-22.713,22.713c0,12.537,10.177,22.713,22.713,22.713h13.629V232.739z M231.83,95.548v118.109  " +
+  "c0,9.996-8.176,18.172-18.172,18.172c-9.994,0-18.171-8.176-18.171-18.172V95.548c0-9.996,8.177-18.173,18.171-18.173  " +
+  "C223.653,77.375,231.83,85.552,231.83,95.548z";
 
+var renderPathWithDiamond = function (fromX, fromY, toX, toY) {
+  var dx = toX - fromX;
+  var dy = toY - fromY;
+  var length = Math.sqrt(dx * dx + dy * dy);
+  var ndx = dx / length;
+  var ndy = dy / length;
+  return "M" + (fromX + 16 * ndx) + "," + (fromY + 16 * ndy)
+    + " l" + (-8 * ndx + 4 * ndy) + "," + (-8 * ndy - 4 * ndx)
+    + " l" + (-8 * ndx - 4 * ndy) + "," + (-8 * ndy + 4 * ndx)
+    + " l" + (8 * ndx - 4 * ndy) + "," + (8 * ndy + 4 * ndx)
+    + " l" + (8 * ndx + 4 * ndy) + "," + (8 * ndy - 4 * ndx)
+    + " L" + toX + "," + toY;
+};
+
+var relationTypes = {
+  inherits: { // subclass -> superclass
+    preferredDx: 0,
+    preferredDy: -100, // from below
+    dxGrow: 2,
+    dxShrink: 2,
+    dyGrow: 100, // repel hard
+    dyShrink: 5, // attract
+    renderPath: function (fromNode, toNode) {
+      var dx = fromNode.x - toNode.x;
+      return "M" + toNode.x + "," + (toNode.getBottom() + 10)
+        + "l-5,0 l5,-10 l5,10 l-5,0 l0,10 "
+        + "l" + dx + ",0 "
+        + "L" + fromNode.x + "," + fromNode.getTop();
+    }
+  },
+  one: {
+    preferredDx: -200,
+    preferredDy: -100,
+    dxGrow: 2,
+    dxShrink: 2,
+    dyGrow: 2,
+    dyShrink: 2,
+    renderPath: function (fromNode, toNode) {
+      var fromX = (fromNode.getLeft() + fromNode.width / 4);
+      var fromY = fromNode.y;
+      var toX = toNode.getRight() - toNode.width / 4;
+      var toY = toNode.y;
+      var dx = toX - fromX;
+      var dy = toY - fromY;
+      var halfY = dy / 2;
+      return "M" + fromX + "," + fromY
+        + "c 0," + halfY + " " + dx + "," + halfY + " " + dx + "," + dy;
+    }
+  },
+  many: {
+    preferredDx: -200,
+    preferredDy: 100,
+    dxGrow: 2,
+    dxShrink: 2,
+    dyGrow: 5,
+    dyShrink: 5,
+    renderPath: function (fromNode, toNode) {
+      var fromX = (fromNode.getRight() - 10);
+      var toX = toNode.getLeft() + 10;
+      var dx = toX - fromX;
+      var dy = toNode.y - fromNode.y;
+      return "M" + fromX + "," + fromNode.y
+        + "c 40,20 " + (dx - 40) + "," + dy + " " + dx + "," + dy;
+    }
+  },
+  ownsOne: {
+    preferredDx: 200,
+    preferredDy: 0,
+    dxGrow: 5,
+    dxShrink: 5,
+    dyGrow: 10,
+    dyShrink: 50, // push down hard
+    strokeWidth: 2,
+    renderPath: function (fromNode, toNode) {
+      var fromX = (fromNode.getRight() - 20);
+      var fromY = fromNode.getBottom();
+      var toX = toNode.getLeft() + 20;
+      var toY = toNode.getTop();
+      return renderPathWithDiamond(fromX, fromY, toX, toY);
+    }
+  },
+  ownsMany: {
+    preferredDx: 150,
+    preferredDy: 150,
+    dxGrow: 5,
+    dxShrink: 5,
+    dyGrow: 10,
+    dyShrink: 50, // push down hard
+    strokeWidth: 2,
+    renderPath: function (fromNode, toNode) {
+      var fromX = (fromNode.getRight() - 40);
+      var fromY = fromNode.getBottom();
+      var toX = toNode.getLeft() + 20;
+      var toY = toNode.getTop();
+      return renderPathWithDiamond(fromX, fromY, toX, toY);
+    }
+  },
+  parts: {
+    preferredDx: 0,
+    preferredDy: 150,
+    dxGrow: 5,
+    dxShrink: 5,
+    dyGrow: 10,
+    dyShrink: 50, // push down hard
+    strokeWidth: 2,
+    fill: true,
+    renderPath: function (fromNode, toNode) {
+      var fromX = (fromNode.getRight() - 40);
+      var fromY = fromNode.getBottom();
+      var toX = toNode.getLeft() + 20;
+      var toY = toNode.getTop();
+      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
+    }
+  },
+  role: {
+    preferredDx: -200,
+    preferredDy: 0,
+    dxGrow: 50,
+    dxShrink: 5,
+    dyGrow: 5,
+    dyShrink: 5,
+    strokeWidth: 1,
+    renderPath: function (fromNode, toNode) {
+      var fromX = (fromNode.getLeft());
+      var fromY = fromNode.y;
+      var toX = toNode.getRight();
+      var toY = toNode.y;
+      return "M" + (toX + 8) + "," + toY
+        + "l0,4 l-8,0 l0,-8 l8,0 l0,4 "
+        + "L" + fromX + "," + fromY;
+    }
+  }
+};
+
+// state
 var graphData = { nodes: [], edges: [], startNodeId: null };
 var visibleEntities;
-var visibleLinks;
+var visibleRelations;
 var focus = null;
 
 // Elements
@@ -70,7 +213,7 @@ function rescale() {
 function showEdge(edge) {
   if (!edge.visible) {
     edge.visible = true;
-    visibleLinks.push(edge);
+    visibleRelations.push(edge);
   }
 }
 
@@ -81,12 +224,12 @@ function showEntity(entity, pos) {
     entity.y = entity.py = pos.y;
     visibleEntities.push(entity);
     entity.incomingEdges.forEach(function(edge){
-      if (edge.target.visible) {
+      if (edge.source.visible) {
         showEdge(edge);
       }
     });
     entity.outgoingEdges.forEach(function(edge){
-      if (edge.source.visible) {
+      if (edge.target.visible) {
         showEdge(edge);
       }
     });
@@ -114,22 +257,21 @@ d3.select("#background").call(d3.behavior.zoom().on("zoom", rescale));
 var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
 
-// init force layout
+// init force
 var force = d3.layout.force()
   .size([width, height])
   .linkDistance(0)
-  .charge(-200)
+  .charge(0)
   .on("tick", tick);
 
 visibleEntities = force.nodes();
-visibleLinks = [];
+visibleRelations = [];
 
 var drag = force.drag()
   .on("drag", function (d, i) {
     force.resume();
     d.dragMoved = true;
 }).on("dragstart", function (d) {
-//    d3.event.sourceEvent.stopPropagation(); // silence other listeners
     focus = null;
     updateFocus();
     d.dragMoved = false;
@@ -178,10 +320,7 @@ function tick(e) {
   });
 
   link
-    .attr("x1", function (d) { return d.source.x; })
-    .attr("y1", function(d) { return d.source.y; })
-    .attr("x2", function(d) { return d.target.x; })
-    .attr("y2", function(d) { return d.target.y; });
+    .attr("d", function (d) { return relationTypes[d.type].renderPath(d.source, d.target); });
 
   entity
     .attr("x", function (d) { return d.x - (d.width/2) - 600; })
@@ -222,6 +361,7 @@ var redraw = function () {
     .attr("width", function (d) {
       var text = this.parentNode.lastChild;
       var textWidth = text.getComputedTextLength();
+      // Cheating here: Making adjustments to the data
       d.width = Math.max(100, textWidth + 20);
       d.height = 40;
       return d.width;
@@ -229,9 +369,12 @@ var redraw = function () {
 
   entity.exit().remove();
 
-  link = link.data(visibleLinks, function (d) { return d.id; });
+  link = link.data(visibleRelations, function (d) { return d.id; });
 
   link.enter().insert("path")
+    .attr("stroke-width", function (d) { return relationTypes[d.type].strokeWidth || 2; })
+    .attr("stroke", "black")
+    .attr("id", function (d) { return d.id; })
     .attr("class", "link");
 
   updateFocus();
@@ -244,6 +387,20 @@ var graphDataLoaded = function (data) {
   graphData.edgesById = {};
   graphData.nodes.forEach(function (node) {
     graphData.nodesById[node.id] = node;
+    node.height = 40;
+    node.width = 200;
+    node.getBottom = function () {
+      return this.y + this.height / 2;
+    };
+    node.getTop = function () {
+      return this.y - this.height / 2;
+    };
+    node.getLeft = function () {
+      return this.x - this.width / 2;
+    };
+    node.getRight = function () {
+      return this.x + this.width / 2;
+    };
     node.outgoingEdges = [];
     node.incomingEdges = [];
     node.visible = false;
@@ -253,6 +410,7 @@ var graphDataLoaded = function (data) {
     var edges = graphData.edges[edgeType];
     edges.forEach(function(edge){
       graphData.edgesById[edge.id] = edge;
+      edge.type = edgeType;
       edge.source = graphData.nodesById[edge.from];
       edge.target = graphData.nodesById[edge.to];
       edge.source.outgoingEdges.push(edge);
@@ -260,7 +418,7 @@ var graphDataLoaded = function (data) {
     });
   };
 
-  visibleLinks.splice(0, visibleLinks.length);
+  visibleRelations.splice(0, visibleRelations.length);
   visibleEntities.splice(0, visibleEntities.length);
   focus = null;
   if (graphData.startNodeId) {
