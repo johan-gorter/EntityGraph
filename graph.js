@@ -252,10 +252,20 @@ function expand() {
   force.resume();
 }
 
+function off() {
+  focus.fixed = false;
+  focus.selected = false;
+  focus = null;
+  updateFocus();
+  redraw();
+  force.resume();
+}
+
 // init svg
 d3.select("#background").call(d3.behavior.zoom().on("zoom", rescale));
 var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
+offElement.on("click", off);
 
 // init force
 var force = d3.layout.force()
@@ -274,7 +284,9 @@ var drag = force.drag()
 }).on("dragstart", function (d) {
     focus = null;
     updateFocus();
+    d.selected = true;
     d.dragMoved = false;
+    redraw();
 }).on("dragend", function (d) {
   if(d.dragMoved) {
     force.resume();
@@ -287,6 +299,8 @@ var entity = visualization.select("#entities").selectAll(".entity");
 var link = visualization.select("#links").selectAll(".link");
 
 function tick(e) {
+
+  // Special repelling behavior
   var k = 0.6 * e.alpha;
   force.nodes().forEach(function (entity) {
     if(!entity.fixed) {
@@ -319,6 +333,9 @@ function tick(e) {
     }
   });
 
+  // Edge attraction behavior
+
+  // Draw everything
   link
     .attr("d", function (d) { return relationTypes[d.type].renderPath(d.source, d.target); });
 
@@ -346,8 +363,7 @@ var redraw = function () {
     .attr("width", 200)
     .attr("height", 40)
     .attr("rx", 10)
-    .attr("ry", 10)
-    .attr("fill", "url(#entity-gradient)");
+    .attr("ry", 10);
 
   enteringEntity.append("svg:text")
     .attr("class", "text")
@@ -366,6 +382,10 @@ var redraw = function () {
       d.height = 40;
       return d.width;
     });
+
+  entity.select("rect").attr("fill", function (d) {
+    return d.selected ? "url(#selected-entity-gradient)" : "url(#entity-gradient)";
+  });
 
   entity.exit().remove();
 

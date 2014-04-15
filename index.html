@@ -22,34 +22,23 @@
       overflow: hidden;
   }
 
-.entity {
-  fill: #000;
-  cursor: move;
-}
+  .chart {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 
-.node_selected {
-  fill: #ff7f0e;
-  stroke: #ff7f0e;
-}
+    .chart > svg {
+      width: 100%;
+      height: 100%;
+    }
 
-.drag_line {
-  stroke: #999;
-  stroke-width: 5;
-  pointer-events: none;
-}
-
-.drag_line_hidden {
-  stroke: #999;
-  stroke-width: 0;
-  pointer-events: none;
-}
-
-.link {
-}
-
-.link_selected {
-  stroke: #ff7f0e;
-}
+  .entity {
+    fill: #000;
+    cursor: move;
+  }
 
   .entity .text {
     font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
@@ -57,29 +46,20 @@
     fill: white;
   }
 
-.chart {
-    position: absolute;
-    top: 30px;
-    left: 0;
-    right: 0;
-    bottom: 0;  
-}
-
-.chart > svg {
-    width: 100%;
-    height: 100%;
-}
-
 </style>
 </head>
 <body>
   <div id="chart" class="chart">
     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid slice" viewBox="-600 -600 1200 1200" pointer-events="all">
         <defs>
-            <linearGradient id="entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:rgb(32,32,192);stop-opacity:1"></stop>
-                <stop offset="100%" style="stop-color:rgb(16,16,128);stop-opacity:1"></stop>
-            </linearGradient>
+          <linearGradient id="selected-entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:rgb(32,32,192);stop-opacity:1"></stop>
+              <stop offset="100%" style="stop-color:rgb(16,16,128);stop-opacity:1"></stop>
+          </linearGradient>
+          <linearGradient id="entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color: rgb(192,192,192); stop-opacity: 1; "></stop>
+            <stop offset="100%" style="stop-color:rgb(128,128,128);stop-opacity:1"></stop>
+          </linearGradient>
         </defs>
         <rect x="-600" y="-600" width="1200" height="1200" fill="transparent" id="background"></rect>
         <g id="visualization">
