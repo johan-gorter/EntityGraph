@@ -157,6 +157,7 @@ var focusElement = d3.select("#focus");
 var focusBorderElement = d3.select("#focus-border");
 var offElement = d3.select("#focus-off");
 var expandElement = d3.select("#focus-expand");
+var pinElement = d3.select("#focus-pin");
 
 // Helper functions
 
@@ -167,8 +168,9 @@ var updateFocus = function () {
     focusElement.attr("display", "");
     focusBorderElement.attr("width", focus.width + 10);
     focusBorderElement.attr("x", -focus.width / 2 - 5);
-    offElement.attr("transform", "translate("+ [-focus.width / 2 + 15, -50]+")");
-    expandElement.attr("transform", "translate(" + [focus.width / 2 - 15, -50] + ")");
+    pinElement.attr("transform", "translate("+ [-focus.width / 2 + 15, -50]+")");
+    offElement.attr("transform", "translate(" + [focus.width / 2 - 15, -50] + ")");
+    expandElement.attr("transform", "translate(" + [-focus.width / 2 - 30, 0] + ")");
     positionFocus();
   }
 };
