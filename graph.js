@@ -183,7 +183,7 @@ function getQueryStringParameter(name) {
 }
 
 var positionFocus = function () {
-  focusElement.attr("transform", "translate(" + [focus.x - 600, focus.y - 600] + ")");
+  focusElement.attr("transform", "translate(" + [focus.x, focus.y] + ")");
 };
 
 function getLocalToSVGRatio() {
@@ -274,6 +274,7 @@ var force = d3.layout.force()
   .size([width, height])
   .linkDistance(0)
   .charge(0)
+  .gravity(0)
   .on("tick", tick);
 
 visibleEntities = force.nodes();
@@ -304,10 +305,12 @@ function tick(e) {
 
   // Special repelling behavior
   var k = 0.6 * e.alpha;
-  force.nodes().forEach(function (entity) {
+  visibleEntities.forEach(function (entity) {
     if(!entity.fixed) {
-      force.nodes().forEach(function (otherEntity) {
-        if(entity !== otherEntity && (entity.px != null) && (otherEntity.px != null)) {
+      visibleEntities.forEach(function (otherEntity) {
+        if(entity !== otherEntity 
+            && (entity.px != null) && (otherEntity.px != null)
+            && !(entity.selected && !otherEntity.selected) /*non-selected nodes do not repel selected nodes */) {
           var dy = otherEntity.py - entity.py;
           if(dy > -repelDistance && dy < repelDistance) {
             var dx = otherEntity.px - entity.px;
@@ -336,15 +339,35 @@ function tick(e) {
   });
 
   // Edge attraction behavior
+  k = 0.1 * e.alpha;
+  visibleRelations.forEach(function(relation) {
+    var type = relationTypes[relation.type];
+    var dx = relation.target.x = relation.source.x;
+    var dy = relation.target.y = relation.source.y;
+    var diffDx = dx - type.preferredDx;
+    var diffDy = dy - type.preferredDy;
+    var forceX;
+    var forceY;
+    if (diffDx>0) {
+      forceX = - diffDx * type.dxShrink * k;
+    } else {
+      forceX = - diffDx * type.dxGrow * k;
+    }
+    if (diffDy>0) {
+      forceY = - diffDy * type.dyShrink * k;
+    } else {
+      forceY = - diffDy * type.dyGrow * k;
+    }
+  });
 
   // Draw everything
   link
     .attr("d", function (d) { return relationTypes[d.type].renderPath(d.source, d.target); });
 
   entity
-    .attr("x", function (d) { return d.x - (d.width/2) - 600; })
+    .attr("x", function (d) { return d.x - (d.width/2); })
     .attr("y", function (d) { 
-      return d.y - 20 - 600; }
+      return d.y - 20; }
     );
 
   if(focus) {
