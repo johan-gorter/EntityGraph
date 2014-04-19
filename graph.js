@@ -342,8 +342,8 @@ function tick(e) {
   k = 0.1 * e.alpha;
   visibleRelations.forEach(function(relation) {
     var type = relationTypes[relation.type];
-    var dx = relation.target.x = relation.source.x;
-    var dy = relation.target.y = relation.source.y;
+    var dx = relation.target.px - relation.source.px;
+    var dy = relation.target.py - relation.source.py;
     var diffDx = dx - type.preferredDx;
     var diffDy = dy - type.preferredDy;
     var forceX;
@@ -357,6 +357,14 @@ function tick(e) {
       forceY = - diffDy * type.dyShrink * k;
     } else {
       forceY = - diffDy * type.dyGrow * k;
+    }
+    if (!relation.target.fixed && (relation.source.selected || !relation.target.selected)) {
+    	relation.target.x += forceX;
+    	relation.target.y += forceY;
+    }
+    if (!relation.source.fixed && (relation.target.selected || !relation.source.selected)) {
+    	relation.source.x -= forceX;
+    	relation.source.y -= forceY;
     }
   });
 
