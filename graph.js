@@ -1,5 +1,13 @@
 /// <reference path="lib/d3.js" />
 
+//TODO:
+/*
+Status icons
+Buttons +/-
+Buttons ++ and --
+Selected edges
+*/
+
 // constants
 var width = 1200;
 var height = 1200;
@@ -25,14 +33,18 @@ var renderPathWithDiamond = function (fromX, fromY, toX, toY) {
     + " L" + toX + "," + toY;
 };
 
+var absMaxOne = function (n) {
+  return Math.max(-1, Math.min(1, n));
+};
+
 var relationTypes = {
   inherits: { // subclass -> superclass
     preferredDx: 0,
-    preferredDy: -100, // from below
+    preferredDy: -150, // from below
     dxGrow: 2,
     dxShrink: 2,
-    dyGrow: 100, // repel hard
-    dyShrink: 5, // attract
+    dyGrow: 5, // attract soft: grow=make dy larger (-200 -> -150)
+    dyShrink: 100, // repel hard: shrink=make dy smaller (-50 -> -150)
     renderPath: function (fromNode, toNode) {
       var dx = fromNode.x - toNode.x;
       return "M" + toNode.x + "," + (toNode.getBottom() + 10)
@@ -42,16 +54,16 @@ var relationTypes = {
     }
   },
   one: {
-    preferredDx: -200,
-    preferredDy: -100,
-    dxGrow: 2,
-    dxShrink: 2,
-    dyGrow: 2,
-    dyShrink: 2,
+    preferredDx: 200,
+    preferredDy: -150,
+    dxGrow: 3,
+    dxShrink: 1,
+    dyGrow: 3,
+    dyShrink: 1,
     renderPath: function (fromNode, toNode) {
-      var fromX = (fromNode.getLeft() + fromNode.width / 4);
+      var fromX = (fromNode.getRight() - fromNode.width / 4);
       var fromY = fromNode.y;
-      var toX = toNode.getRight() - toNode.width / 4;
+      var toX = toNode.getLeft() + toNode.width / 4;
       var toY = toNode.y;
       var dx = toX - fromX;
       var dy = toY - fromY;
@@ -61,12 +73,12 @@ var relationTypes = {
     }
   },
   many: {
-    preferredDx: -200,
-    preferredDy: 100,
-    dxGrow: 2,
-    dxShrink: 2,
-    dyGrow: 5,
-    dyShrink: 5,
+    preferredDx: 200,
+    preferredDy: 150,
+    dxGrow: 3,
+    dxShrink: 1,
+    dyGrow: 3,
+    dyShrink: 1,
     renderPath: function (fromNode, toNode) {
       var fromX = (fromNode.getRight() - 10);
       var toX = toNode.getLeft() + 10;
@@ -77,12 +89,12 @@ var relationTypes = {
     }
   },
   ownsOne: {
-    preferredDx: 200,
+    preferredDx: -300,
     preferredDy: 0,
     dxGrow: 5,
     dxShrink: 5,
     dyGrow: 10,
-    dyShrink: 50, // push down hard
+    dyShrink: 10,
     strokeWidth: 2,
     renderPath: function (fromNode, toNode) {
       var fromX = (fromNode.getRight() - 20);
@@ -93,7 +105,7 @@ var relationTypes = {
     }
   },
   ownsMany: {
-    preferredDx: 150,
+    preferredDx: -100,
     preferredDy: 150,
     dxGrow: 5,
     dxShrink: 5,
@@ -101,11 +113,20 @@ var relationTypes = {
     dyShrink: 50, // push down hard
     strokeWidth: 2,
     renderPath: function (fromNode, toNode) {
-      var fromX = (fromNode.getRight() - 40);
+      var dx = toNode.x - fromNode.x;
+      var dy = toNode.y - fromNode.y;
+      var dxRel = (dx / dy) / (fromNode.width / (2 * fromNode.height));
       var fromY = fromNode.getBottom();
-      var toX = toNode.getLeft() + 20;
-      var toY = toNode.getTop();
-      return renderPathWithDiamond(fromX, fromY, toX, toY);
+      if (dy < 0) {
+        // Abnormal direction
+        fromY = fromNode.getTop();
+        dxRel = -dxRel;
+      }
+      var fromX = fromNode.getLeft() + 10 + ((fromNode.width - 20) / 4) * (absMaxOne(dxRel) + 1);
+//      dxRel = (dx / dy) / (toNode.width / toNode.height);
+//      var toX = toNode.x + ((toNode.width / 2) - 10) * - absMaxOne(dxRel);
+//      var toY = toNode.getTop();
+      return renderPathWithDiamond(fromX, fromY, toNode.x, toNode.y);
     }
   },
   parts: {
@@ -113,8 +134,8 @@ var relationTypes = {
     preferredDy: 150,
     dxGrow: 5,
     dxShrink: 5,
-    dyGrow: 10,
-    dyShrink: 50, // push down hard
+    dyGrow: 50, // push down hard
+    dyShrink: 10, 
     strokeWidth: 2,
     fill: true,
     renderPath: function (fromNode, toNode) {
@@ -126,14 +147,15 @@ var relationTypes = {
     }
   },
   role: {
-    preferredDx: -200,
+    preferredDx: 300,
     preferredDy: 0,
     dxGrow: 50,
     dxShrink: 5,
-    dyGrow: 5,
-    dyShrink: 5,
-    strokeWidth: 1,
-    renderPath: function (fromNode, toNode) {
+    dyGrow: 3,
+    dyShrink: 3,
+    strokeWidth: 10,
+    stroke: "url(#role-relation-gradient)",
+    renderPathOld: function (fromNode, toNode) {
       var fromX = (fromNode.getLeft());
       var fromY = fromNode.y;
       var toX = toNode.getRight();
@@ -141,6 +163,16 @@ var relationTypes = {
       return "M" + (toX + 8) + "," + toY
         + "l0,4 l-8,0 l0,-8 l8,0 l0,4 "
         + "L" + fromX + "," + fromY;
+    },
+    renderPath: function (fromNode, toNode) {
+      var fromX = fromNode.getRight();
+      var fromY = fromNode.y;
+      var toX = toNode.getLeft();
+      var toY = toNode.y;
+      var dx = toX - fromX;
+      var dy = toY - fromY;
+      return "M" + fromX + "," + fromY
+        + "c 50,0 " + (dx-50) + "," + dy + " " + dx + "," + dy;
     }
   }
 };
@@ -168,8 +200,9 @@ var updateFocus = function () {
     focusElement.attr("display", "");
     focusBorderElement.attr("width", focus.width + 10);
     focusBorderElement.attr("x", -focus.width / 2 - 5);
-    pinElement.attr("transform", "translate("+ [-focus.width / 2 + 15, -50]+")");
-    offElement.attr("transform", "translate(" + [focus.width / 2 - 15, -50] + ")");
+    pinElement.attr("transform", "translate("+ [-focus.width / 2 + 15, -45]+")");
+    offElement.attr("transform", "translate(" + [focus.width / 2 - 15, -45] + ")");
+    pinElement.attr("display", focus.fixed ? "" : "none");
     expandElement.attr("transform", "translate(" + [-focus.width / 2 - 30, 0] + ")");
     positionFocus();
   }
@@ -219,11 +252,11 @@ function showEdge(edge) {
   }
 }
 
-function showEntity(entity, pos) {
+function showEntity(entity, pos, dx, dy, n) {
   if (!entity.visible) {
     entity.visible = true;
-    entity.x = entity.px = pos.x;
-    entity.y = entity.py = pos.y;
+    entity.x = entity.px = pos.x + (dx/2)*(1+n/100)+dy*(n/100);
+    entity.y = entity.py = pos.y + (dy/2)*(1+n/100)+dx*(n/100);
     visibleEntities.push(entity);
     entity.incomingEdges.forEach(function(edge){
       if (edge.source.visible) {
@@ -238,36 +271,85 @@ function showEntity(entity, pos) {
   }
 }
 
+function hideRelation(relation) {
+  if (relation.visible) {
+    relation.visible = false;
+    visibleRelations.splice(visibleRelations.indexOf(relation), 1);
+  }
+}
+
 function expand() {
-  var pos = { x: focus.x, y: focus.y };
-  focus.incomingEdges.forEach(function (edge) {
-    pos.x++;
-    pos.y++;
-    showEntity(edge.source, pos);
-  });
-  focus.outgoingEdges.forEach(function(edge){
-    pos.x++;
-    pos.y++;
-    showEntity(edge.target, pos);
-  });
+  focus.expanded = !focus.expanded;
+  if(focus.expanded) {
+    var n = 0;
+    focus.incomingEdges.forEach(function (edge) {
+      n++;
+      var type = relationTypes[edge.type];
+      showEntity(edge.source, focus, -type.preferredDx, -type.preferredDy, n);
+    });
+    focus.outgoingEdges.forEach(function (edge) {
+      n++;
+      var type = relationTypes[edge.type];
+      showEntity(edge.target, focus, type.preferredDx, type.preferredDy, n);
+    });
+  } else {
+    markAndSweep();
+  }
   redraw();
   force.resume();
 }
 
+function markAndSweep() {
+  visibleEntities.forEach(function (entity) {
+    entity.visible = entity.selected;
+  });
+  visibleEntities.forEach(function (entity) {
+    if (entity.expanded) {
+      entity.incomingEdges.forEach(function (edge) {
+        edge.source.visible = true;
+      });
+      entity.outgoingEdges.forEach(function (edge) {
+        edge.target.visible = true;
+      });
+    }
+  });
+  for (var i = 0; i < visibleEntities.length;) {
+    var entity = visibleEntities[i];
+    if(entity.visible) {
+      i++;
+    } else {
+      visibleEntities.splice(i, 1);
+      entity.incomingEdges.forEach(hideRelation);
+      entity.outgoingEdges.forEach(hideRelation);
+    }
+  }
+}
+
 function off() {
   focus.fixed = false;
+  if(focus.expanded) {
+    expand(); // collapse
+  }
   focus.selected = false;
   focus = null;
+  markAndSweep();
   updateFocus();
   redraw();
   force.resume();
 }
 
+function unpin() {
+  focus.fixed = false;
+  updateFocus();
+  force.resume();
+}
+
 // init svg
-d3.select("#background").call(d3.behavior.zoom().on("zoom", rescale));
+d3.select("#handle-zoom").call(d3.behavior.zoom().on("zoom", rescale));
 var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
 offElement.on("click", off);
+pinElement.on("click", unpin);
 
 // init force
 var force = d3.layout.force()
@@ -275,6 +357,7 @@ var force = d3.layout.force()
   .linkDistance(0)
   .charge(0)
   .gravity(0)
+  .friction(0)
   .on("tick", tick);
 
 visibleEntities = force.nodes();
@@ -289,9 +372,11 @@ var drag = force.drag()
     updateFocus();
     d.selected = true;
     d.dragMoved = false;
+    d3.event.sourceEvent.stopPropagation();
     redraw();
 }).on("dragend", function (d) {
-  if(d.dragMoved) {
+  if (d.dragMoved) {
+    d.fixed = true;
     force.resume();
   }
   focus = d;
@@ -301,25 +386,24 @@ var drag = force.drag()
 var entity = visualization.select("#entities").selectAll(".entity");
 var link = visualization.select("#links").selectAll(".link");
 
-function tick(e) {
-
+function entitiesRepel(e) {
   // Special repelling behavior
-  var k = 0.6 * e.alpha;
+  var k = 6.6 * e.alpha;
   visibleEntities.forEach(function (entity) {
-    if(!entity.fixed) {
+    if (!entity.fixed) {
       visibleEntities.forEach(function (otherEntity) {
-        if(entity !== otherEntity 
+        if (entity !== otherEntity
             && (entity.px != null) && (otherEntity.px != null)
             && !(entity.selected && !otherEntity.selected) /*non-selected nodes do not repel selected nodes */) {
           var dy = otherEntity.py - entity.py;
-          if(dy > -repelDistance && dy < repelDistance) {
+          if (dy > -repelDistance && dy < repelDistance) {
             var dx = otherEntity.px - entity.px;
             var ady = Math.abs(dy);
             var adx = Math.abs(dx);
-            if(adx > ady) {
+            if (adx > ady) {
               var maxShift = (entity.width / 2 + otherEntity.width / 2 - entity.height / 2 - otherEntity.height / 2);
               var shift = Math.min(adx - ady, maxShift);
-              if(dx > 0) {
+              if (dx > 0) {
                 dx = dx - shift;
               } else {
                 dx = dx + shift;
@@ -337,10 +421,12 @@ function tick(e) {
       });
     }
   });
+};
 
+function edgesAttract(e) {
   // Edge attraction behavior
-  k = 0.1 * e.alpha;
-  visibleRelations.forEach(function(relation) {
+  k = 0.05 * e.alpha;
+  visibleRelations.forEach(function (relation) {
     var type = relationTypes[relation.type];
     var dx = relation.target.px - relation.source.px;
     var dy = relation.target.py - relation.source.py;
@@ -348,25 +434,44 @@ function tick(e) {
     var diffDy = dy - type.preferredDy;
     var forceX;
     var forceY;
-    if (diffDx>0) {
-      forceX = - diffDx * type.dxShrink * k;
+    if (diffDx > 0) {
+      forceX = -diffDx * type.dxShrink * k;
     } else {
-      forceX = - diffDx * type.dxGrow * k;
+      forceX = -diffDx * type.dxGrow * k;
     }
-    if (diffDy>0) {
-      forceY = - diffDy * type.dyShrink * k;
+    if (diffDy > 0) {
+      forceY = -diffDy * type.dyShrink * k;
     } else {
-      forceY = - diffDy * type.dyGrow * k;
+      forceY = -diffDy * type.dyGrow * k;
     }
     if (!relation.target.fixed && (relation.source.selected || !relation.target.selected)) {
-    	relation.target.x += forceX;
-    	relation.target.y += forceY;
+      relation.target.x += forceX;
+      relation.target.y += forceY;
+      if (Math.abs(forceX) > 0.2) {
+        console.log("forceX: " + forceX + " diffDx: " + diffDx + " target.x: " + relation.target.x + " target.px " + relation.target.px);
+      } else {
+        //debugger
+      }
     }
     if (!relation.source.fixed && (relation.target.selected || !relation.source.selected)) {
-    	relation.source.x -= forceX;
-    	relation.source.y -= forceY;
+      relation.source.x -= forceX;
+      relation.source.y -= forceY;
     }
   });
+};
+
+function tick(e) {
+  e.alpha = 0.02; // fixed
+  for (var i = 0; i < 10; i++) {
+    if(i > 0) {
+      visibleEntities.forEach(function (entity) {
+        entity.px = entity.x;
+        entity.py = entity.y;
+      });
+    }
+    entitiesRepel(e);
+    edgesAttract(e);
+  }
 
   // Draw everything
   link
@@ -375,7 +480,7 @@ function tick(e) {
   entity
     .attr("x", function (d) { return d.x - (d.width/2); })
     .attr("y", function (d) { 
-      return d.y - 20; }
+      return d.y - d.height/2; }
     );
 
   if(focus) {
@@ -389,19 +494,19 @@ var redraw = function () {
   var enteringEntity = entity.enter().insert("svg:svg")
     .attr("class", "entity")
     .attr("width", 200)
-    .attr("height", 40)
+    .attr("height", 30)
     .call(drag);
 
   enteringEntity.append("rect")
     .attr("width", 200)
-    .attr("height", 40)
+    .attr("height", 30)
     .attr("rx", 10)
     .attr("ry", 10);
 
   enteringEntity.append("svg:text")
     .attr("class", "text")
     .attr("x", 10)
-    .attr("y", 9)
+    .attr("y", 4)
     .attr("dy", 15)
     .attr("color", "white")
     .text(function (d) { return d.text; });
@@ -412,7 +517,12 @@ var redraw = function () {
       var textWidth = text.getComputedTextLength();
       // Cheating here: Making adjustments to the data
       d.width = Math.max(100, textWidth + 20);
-      d.height = 40;
+      d.height = 30;
+      return d.width;
+    });
+
+  enteringEntity
+    .attr("width", function (d) {
       return d.width;
     });
 
@@ -426,9 +536,11 @@ var redraw = function () {
 
   link.enter().insert("path")
     .attr("stroke-width", function (d) { return relationTypes[d.type].strokeWidth || 2; })
-    .attr("stroke", "black")
+    .attr("stroke", function (d) { return relationTypes[d.type].stroke || "black"; })
     .attr("id", function (d) { return d.id; })
     .attr("class", "link");
+
+  link.exit().remove();
 
   updateFocus();
   force.start();
@@ -440,7 +552,7 @@ var graphDataLoaded = function (data) {
   graphData.edgesById = {};
   graphData.nodes.forEach(function (node) {
     graphData.nodesById[node.id] = node;
-    node.height = 40;
+    node.height = 30;
     node.width = 200;
     node.getBottom = function () {
       return this.y + this.height / 2;
