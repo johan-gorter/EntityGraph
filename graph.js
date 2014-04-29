@@ -425,7 +425,7 @@ function entitiesRepel(e) {
 
 function edgesAttract(e) {
   // Edge attraction behavior
-  k = 0.05 * e.alpha;
+  var k = 0.05 * e.alpha;
   visibleRelations.forEach(function (relation) {
     var type = relationTypes[relation.type];
     var dx = relation.target.px - relation.source.px;
@@ -447,11 +447,6 @@ function edgesAttract(e) {
     if (!relation.target.fixed && (relation.source.selected || !relation.target.selected)) {
       relation.target.x += forceX;
       relation.target.y += forceY;
-      if (Math.abs(forceX) > 0.2) {
-        console.log("forceX: " + forceX + " diffDx: " + diffDx + " target.x: " + relation.target.x + " target.px " + relation.target.px);
-      } else {
-        //debugger
-      }
     }
     if (!relation.source.fixed && (relation.target.selected || !relation.source.selected)) {
       relation.source.x -= forceX;
@@ -473,7 +468,7 @@ function tick(e) {
     edgesAttract(e);
   }
 
-  // Draw everything
+  // Reposition everything
   link
     .attr("d", function (d) { return relationTypes[d.type].renderPath(d.source, d.target); });
 
@@ -526,8 +521,12 @@ var redraw = function () {
       return d.width;
     });
 
-  entity.select("rect").attr("fill", function (d) {
-    return d.selected ? "url(#selected-entity-gradient)" : "url(#entity-gradient)";
+  entity.select("rect")
+    .attr("fill", function (d) {
+      return d.selected ? "url(#selected-entity-gradient)" : "url(#entity-gradient)";
+    })
+    .attr("filter", function (d) {
+    return d.expanded ? "url(#shadow)" : "";
   });
 
   entity.exit().remove();
