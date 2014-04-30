@@ -46,6 +46,24 @@
     fill: white;
   }
 
+  .link {
+    stroke: rgb(128,128,128);
+    stroke-width: 2;
+  }
+
+  .link.selected {
+    stroke: rgb(16,16,192);
+  }
+
+  .link.role {
+    stroke: url(#role-relation-gradient);
+    stroke-width: 10;
+  }
+
+  .link.role.selected {
+    stroke: url(#selected-role-relation-gradient);
+  }
+
 </style>
 </head>
 <body>
@@ -64,10 +82,18 @@
                 <stop offset="0%" style="stop-color: rgb(0,0,0); stop-opacity: 0.1"></stop>
                 <stop offset="100%" style="stop-color:rgb(0,0,0); stop-opacity: 0.5"></stop>
             </linearGradient>
-            <filter id="shadow" x="0" y="0" width="200%" height="200%">
-              <feOffset result="offOut" in="SourceAlpha" dx="5" dy="5" />
-              <feGaussianBlur result="blurOut" in="offOut" stdDeviation="10" />
-              <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+            <linearGradient id="selected-role-relation-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color: rgb(16,16,128); stop-opacity: 0.1"></stop>
+              <stop offset="100%" style="stop-color:rgb(16,16,128); stop-opacity: 0.5"></stop>
+            </linearGradient>
+            <filter id="shadow" width="400%" height="400%" x="-100%" y="-100%" >
+              <feGaussianBlur result="blurOut1" in="SourceGraphic" stdDeviation="8" />
+              <feGaussianBlur result="blurOut" in="blurOut1" stdDeviation="8" />
+              <feColorMatrix type="matrix" values="0 0 0 0.1 0
+                                                   0 0 0 0.1 0
+                                                   0 0 0 0.1 0
+                                                   0 0 0 1.5 0" in="blurOut" result="darkBlurOut"  />
+              <feBlend in="SourceGraphic" in2="blurOut1" mode="normal" />
             </filter>
         </defs>
       <g id="handle-zoom">
@@ -85,7 +111,8 @@
             </g>
             <g id="focus-expand" transform="translate(-120,0)">
               <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="2" stroke="orange" />
-              <path fill="none" stroke-width="4" stroke="orange" d="M -10,0 l 20,0 M 0,-10 l 0,20" />
+              <path id="focus-expand-plus" fill="none" stroke-width="4" stroke="orange" d="M -10,0 l 20,0 M 0,-10 l 0,20" />
+              <path id="focus-expand-minus" fill="none" stroke-width="4" stroke="orange" d="M -10,0 l 20,0" />
             </g>
             <g id="focus-pin" transform="translate(-80,-50)">
               <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="2" stroke="orange" />

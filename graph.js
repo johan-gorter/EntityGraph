@@ -2,10 +2,9 @@
 
 //TODO:
 /*
-Status icons
-Buttons +/-
-Buttons ++ and --
 Selected edges
+Buttons ++ and --
+Search
 */
 
 // constants
@@ -48,7 +47,7 @@ var relationTypes = {
     renderPath: function (fromNode, toNode) {
       var dx = fromNode.x - toNode.x;
       return "M" + toNode.x + "," + (toNode.getBottom() + 10)
-        + "l-5,0 l5,-10 l5,10 l-5,0 l0,10 "
+        + "l-10,0 l10,-10 l10,10 l-10,0 l0,10 "
         + "l" + dx + ",0 "
         + "L" + fromNode.x + "," + fromNode.getTop();
     }
@@ -178,6 +177,7 @@ var relationTypes = {
 };
 
 // state
+var lastBackgroundMousedownPosition = null;
 var graphData = { nodes: [], edges: [], startNodeId: null };
 var visibleEntities;
 var visibleRelations;
@@ -185,10 +185,13 @@ var focus = null;
 
 // Elements
 
+var backgroundElement = d3.select("#background");
 var focusElement = d3.select("#focus");
 var focusBorderElement = d3.select("#focus-border");
 var offElement = d3.select("#focus-off");
 var expandElement = d3.select("#focus-expand");
+var plusElement = d3.select("#focus-expand-plus");
+var minusElement = d3.select("#focus-expand-minus");
 var pinElement = d3.select("#focus-pin");
 
 // Helper functions
@@ -204,6 +207,8 @@ var updateFocus = function () {
     offElement.attr("transform", "translate(" + [focus.width / 2 - 15, -45] + ")");
     pinElement.attr("display", focus.fixed ? "" : "none");
     expandElement.attr("transform", "translate(" + [-focus.width / 2 - 30, 0] + ")");
+    plusElement.attr("display", focus.expanded ? "none" : "");
+    minusElement.attr("display", focus.expanded ? "" : "none");
     positionFocus();
   }
 };
@@ -245,10 +250,11 @@ function rescale() {
       + " scale(" + scale + ")");
 }
 
-function showEdge(edge) {
-  if (!edge.visible) {
-    edge.visible = true;
-    visibleRelations.push(edge);
+function showRelation(relation) {
+  if (!relation.visible) {
+    relation.visible = true;
+    relation.selected = relation.source.selected && relation.target.selected;
+    visibleRelations.push(relation);
   }
 }
 
@@ -258,14 +264,14 @@ function showEntity(entity, pos, dx, dy, n) {
     entity.x = entity.px = pos.x + (dx/2)*(1+n/100)+dy*(n/100);
     entity.y = entity.py = pos.y + (dy/2)*(1+n/100)+dx*(n/100);
     visibleEntities.push(entity);
-    entity.incomingEdges.forEach(function(edge){
+    entity.incomingRelations.forEach(function(edge){
       if (edge.source.visible) {
-        showEdge(edge);
+        showRelation(edge);
       }
     });
-    entity.outgoingEdges.forEach(function(edge){
+    entity.outgoingRelations.forEach(function(edge){
       if (edge.target.visible) {
-        showEdge(edge);
+        showRelation(edge);
       }
     });
   }
@@ -282,12 +288,12 @@ function expand() {
   focus.expanded = !focus.expanded;
   if(focus.expanded) {
     var n = 0;
-    focus.incomingEdges.forEach(function (edge) {
+    focus.incomingRelations.forEach(function (edge) {
       n++;
       var type = relationTypes[edge.type];
       showEntity(edge.source, focus, -type.preferredDx, -type.preferredDy, n);
     });
-    focus.outgoingEdges.forEach(function (edge) {
+    focus.outgoingRelations.forEach(function (edge) {
       n++;
       var type = relationTypes[edge.type];
       showEntity(edge.target, focus, type.preferredDx, type.preferredDy, n);
@@ -305,10 +311,10 @@ function markAndSweep() {
   });
   visibleEntities.forEach(function (entity) {
     if (entity.expanded) {
-      entity.incomingEdges.forEach(function (edge) {
+      entity.incomingRelations.forEach(function (edge) {
         edge.source.visible = true;
       });
-      entity.outgoingEdges.forEach(function (edge) {
+      entity.outgoingRelations.forEach(function (edge) {
         edge.target.visible = true;
       });
     }
@@ -319,8 +325,8 @@ function markAndSweep() {
       i++;
     } else {
       visibleEntities.splice(i, 1);
-      entity.incomingEdges.forEach(hideRelation);
-      entity.outgoingEdges.forEach(hideRelation);
+      entity.incomingRelations.forEach(hideRelation);
+      entity.outgoingRelations.forEach(hideRelation);
     }
   }
 }
@@ -342,14 +348,40 @@ function unpin() {
   focus.fixed = false;
   updateFocus();
   force.resume();
+  updateFixed(focus);
+}
+
+function updateFixed(d) {
+  var updated = entity.filter(function (d2) { return d2 === d; });
+  if(d.fixed) {
+    updated.select(".pin").remove();
+    updated.append("path")
+      .attr("class", "pin")
+      .attr("d", pinPath)
+      .attr("fill", "darkred")
+      .attr("transform", "scale(0.025) translate(" + (40 * d.width / 2) + " -350) rotate(45)");
+  } else {
+    updated.select(".pin").remove();
+  }
 }
 
 // init svg
-d3.select("#handle-zoom").call(d3.behavior.zoom().on("zoom", rescale));
+d3.select("#handle-zoom")
+  .call(d3.behavior.zoom().on("zoom", rescale))
+  .on("dblclick.zoom", null);
 var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
 offElement.on("click", off);
 pinElement.on("click", unpin);
+backgroundElement.on("mousedown", function () {
+  lastBackgroundMousedownPosition = {x: d3.event.pageX, y: d3.event.pageY};
+}).on("mouseup", function () {
+  if(lastBackgroundMousedownPosition && lastBackgroundMousedownPosition.x === d3.event.pageX && lastBackgroundMousedownPosition.y === d3.event.pageY) {
+    focus = null;
+    updateFocus();
+  }
+  lastBackgroundMousedownPosition = null;
+});;
 
 // init force
 var force = d3.layout.force()
@@ -377,6 +409,7 @@ var drag = force.drag()
 }).on("dragend", function (d) {
   if (d.dragMoved) {
     d.fixed = true;
+    updateFixed(d);
     force.resume();
   }
   focus = d;
@@ -388,7 +421,7 @@ var link = visualization.select("#links").selectAll(".link");
 
 function entitiesRepel(e) {
   // Special repelling behavior
-  var k = 6.6 * e.alpha;
+  var k = 0.66 * e.alpha;
   visibleEntities.forEach(function (entity) {
     if (!entity.fixed) {
       visibleEntities.forEach(function (otherEntity) {
@@ -425,7 +458,7 @@ function entitiesRepel(e) {
 
 function edgesAttract(e) {
   // Edge attraction behavior
-  var k = 0.05 * e.alpha;
+  var k = 0.005 * e.alpha;
   visibleRelations.forEach(function (relation) {
     var type = relationTypes[relation.type];
     var dx = relation.target.px - relation.source.px;
@@ -456,7 +489,9 @@ function edgesAttract(e) {
 };
 
 function tick(e) {
-  e.alpha = 0.02; // fixed
+  if(e.alpha > 0.05) {
+    e.alpha = 0.05; // do not start too fast
+  }
   for (var i = 0; i < 10; i++) {
     if(i > 0) {
       visibleEntities.forEach(function (entity) {
@@ -473,10 +508,7 @@ function tick(e) {
     .attr("d", function (d) { return relationTypes[d.type].renderPath(d.source, d.target); });
 
   entity
-    .attr("x", function (d) { return d.x - (d.width/2); })
-    .attr("y", function (d) { 
-      return d.y - d.height/2; }
-    );
+    .attr("transform", function (d) { return "translate(" + [d.x - (d.width / 2), d.y - d.height / 2] + ")"; });
 
   if(focus) {
     positionFocus();
@@ -486,10 +518,8 @@ function tick(e) {
 var redraw = function () {
   entity = entity.data(visibleEntities, function (d) { return d.id; });
 
-  var enteringEntity = entity.enter().insert("svg:svg")
+  var enteringEntity = entity.enter().insert("g")
     .attr("class", "entity")
-    .attr("width", 200)
-    .attr("height", 30)
     .call(drag);
 
   enteringEntity.append("rect")
@@ -536,8 +566,9 @@ var redraw = function () {
   link.enter().insert("path")
     .attr("stroke-width", function (d) { return relationTypes[d.type].strokeWidth || 2; })
     .attr("stroke", function (d) { return relationTypes[d.type].stroke || "black"; })
-    .attr("id", function (d) { return d.id; })
-    .attr("class", "link");
+    .attr("id", function (d) { return d.id; });
+
+  link.attr("class", function (d) { return "link " + d.type + ((d.source.selected && d.target.selected) ? " selected" : ""); });
 
   link.exit().remove();
 
@@ -565,8 +596,8 @@ var graphDataLoaded = function (data) {
     node.getRight = function () {
       return this.x + this.width / 2;
     };
-    node.outgoingEdges = [];
-    node.incomingEdges = [];
+    node.outgoingRelations = [];
+    node.incomingRelations = [];
     node.visible = false;
     node.selected = false;
   });
@@ -577,8 +608,8 @@ var graphDataLoaded = function (data) {
       edge.type = edgeType;
       edge.source = graphData.nodesById[edge.from];
       edge.target = graphData.nodesById[edge.to];
-      edge.source.outgoingEdges.push(edge);
-      edge.target.incomingEdges.push(edge);
+      edge.source.outgoingRelations.push(edge);
+      edge.target.incomingRelations.push(edge);
     });
   };
 
