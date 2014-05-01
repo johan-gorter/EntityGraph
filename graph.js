@@ -286,24 +286,28 @@ function hideRelation(relation) {
 
 function expand() {
   focus.expanded = !focus.expanded;
-  if(focus.expanded) {
+  updateExpanded(focus);
+  redraw();
+  force.resume();
+}
+
+function updateExpanded(d) {
+  if (d.expanded) {
     var n = 0;
-    focus.incomingRelations.forEach(function (edge) {
+    d.incomingRelations.forEach(function (edge) {
       n++;
       var type = relationTypes[edge.type];
-      showEntity(edge.source, focus, -type.preferredDx, -type.preferredDy, n);
+      showEntity(edge.source, d, -type.preferredDx, -type.preferredDy, n);
     });
-    focus.outgoingRelations.forEach(function (edge) {
+    d.outgoingRelations.forEach(function (edge) {
       n++;
       var type = relationTypes[edge.type];
-      showEntity(edge.target, focus, type.preferredDx, type.preferredDy, n);
+      showEntity(edge.target, d, type.preferredDx, type.preferredDy, n);
     });
   } else {
     markAndSweep();
   }
-  redraw();
-  force.resume();
-}
+};
 
 function markAndSweep() {
   visibleEntities.forEach(function (entity) {
@@ -365,7 +369,26 @@ function updateFixed(d) {
   }
 }
 
-// init svg
+// init events
+d3.select("#expand-all").on("click", function () {
+  visibleEntities.forEach(function (d) {
+    if (d.selected && !d.expanded) {
+      d.expanded = true;
+      updateExpanded(d);
+    }
+    redraw();
+    force.resume();
+  });
+});
+d3.select("#collapse-all").on("click", function () {
+  visibleEntities.forEach(function (d) {
+    if (d.expanded) {
+      d.expanded = false;
+    }
+    markAndSweep();
+    redraw();
+  });
+});
 d3.select("#handle-zoom")
   .call(d3.behavior.zoom().on("zoom", rescale))
   .on("dblclick.zoom", null);
