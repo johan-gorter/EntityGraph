@@ -2,9 +2,8 @@
 
 //TODO:
 /*
-Selected edges
-Buttons ++ and --
-Search
+Touch and scroll in search
+search keyboard events
 */
 
 // constants
@@ -17,6 +16,8 @@ var pinPath = "M150.061,232.739l-67.232,67.868  c-3.363,3.267-5.453,7.898-5.453,
   "H136.432  c-12.536,0-22.713,10.177-22.713,22.713c0,12.537,10.177,22.713,22.713,22.713h13.629V232.739z M231.83,95.548v118.109  " +
   "c0,9.996-8.176,18.172-18.172,18.172c-9.994,0-18.171-8.176-18.171-18.172V95.548c0-9.996,8.177-18.173,18.171-18.173  " +
   "C223.653,77.375,231.83,85.552,231.83,95.548z";
+
+// Utility functions
 
 var renderPathWithDiamond = function (fromX, fromY, toX, toY) {
   var dx = toX - fromX;
@@ -193,6 +194,12 @@ var expandElement = d3.select("#focus-expand");
 var plusElement = d3.select("#focus-expand-plus");
 var minusElement = d3.select("#focus-expand-minus");
 var pinElement = d3.select("#focus-pin");
+var searchAreaElement = d3.select("#search-area");
+var visualization = d3.select("#visualization");
+
+var entity = visualization.select("#entities").selectAll(".entity");
+var link = visualization.select("#links").selectAll(".link");
+var searchResults = d3.select("#search-results").selectAll(".result");
 
 // Helper functions
 
@@ -389,10 +396,26 @@ d3.select("#collapse-all").on("click", function () {
     redraw();
   });
 });
+d3.select("#search")
+  .on("focus", function () {
+    searchAreaElement.style("display", "");
+  })
+  .on("blur", function () {
+    searchAreaElement.style("display", "none");
+  })
+  .on("keyup", function () {
+    function escapeRegExp(s) {
+      return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    }
+    var query = new RegExp("\\b"+escapeRegExp(this.value), "g");
+    graphData.nodes.forEach(function (d) {
+      d.searchHidden = !query.test(d.text);
+    });
+    searchResults.classed("hidden", function (d) { return d.searchHidden; });
+  });
 d3.select("#handle-zoom")
   .call(d3.behavior.zoom().on("zoom", rescale))
   .on("dblclick.zoom", null);
-var visualization = d3.select('#visualization');
 expandElement.on("click", expand);
 offElement.on("click", off);
 pinElement.on("click", unpin);
@@ -439,9 +462,6 @@ var drag = force.drag()
   updateFocus();
 });
 
-var entity = visualization.select("#entities").selectAll(".entity");
-var link = visualization.select("#links").selectAll(".link");
-
 function entitiesRepel(e) {
   // Special repelling behavior
   var k = 0.66 * e.alpha;
@@ -454,6 +474,8 @@ function entitiesRepel(e) {
           var dy = otherEntity.py - entity.py;
           if (dy > -repelDistance && dy < repelDistance) {
             var dx = otherEntity.px - entity.px;
+            dx = dx || 10 * Math.random() - 5;
+            dy = dy || 10 * Math.random() - 5;
             var ady = Math.abs(dy);
             var adx = Math.abs(dx);
             if (adx > ady) {
@@ -468,7 +490,7 @@ function entitiesRepel(e) {
             }
             var distSq = adx * adx + ady * ady;
             if (distSq < repelDistance * repelDistance) {
-              var f = Math.sqrt(repelDistance * repelDistance / (dx * dx + dy * dy)) - 1;
+              var f = Math.sqrt(repelDistance * repelDistance / distSq) - 1;
               entity.x -= dx * f * k;
               entity.y -= dy * f * k;
             }
@@ -599,6 +621,27 @@ var redraw = function () {
   force.start();
 };
 
+function showAndFocus(d) {
+  if (!d.visible) {
+    d.selected = true;
+    showEntity(d, { x: 0, y: 0 }, 0, 0, 0);
+    redraw();
+  }
+  focus = d;
+  updateFocus();
+};
+
+function fillSearchResults() {
+  searchResults = searchResults.data(graphData.nodes);
+
+  searchResults.enter()
+    .insert("div").attr("class", "result")
+    .append("div").attr("class", "result-inner")
+    .append("button")
+    .text(function (d) { return d.text; })
+    .on("mousedown", showAndFocus);
+}
+
 var graphDataLoaded = function (data) {
   graphData = data;
   graphData.nodesById = {};
@@ -650,6 +693,7 @@ var graphDataLoaded = function (data) {
     focus = startNode;
   }
   redraw();
+  fillSearchResults();
 };
 
 redraw();

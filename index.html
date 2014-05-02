@@ -67,14 +67,8 @@
             stroke: url(#selected-role-relation-gradient);
         }
 
-        .controls {
+        #chart > button {
             position: absolute;
-            right: 0px;
-            top: 0px;
-        }
-  
-        .controls > button {
-            position: relative;
             padding: 0;
             border-radius: 50%;
             width: 40px;
@@ -86,12 +80,20 @@
             outline: none;
         }
 
-        .controls > button > svg {
+        #chart > button > svg {
             position: absolute;
             top: 2px;
             left: 2px;
             width: 30px;
             height: 30px;
+        }
+
+        #expand-all {
+          right: 260px;
+        }
+
+        #collapse-all {
+            right: 210px;
         }
 
         #search-icon {
@@ -102,45 +104,105 @@
             height: 24px;
         }
 
-        .controls > input {
+        #search {
+            position: absolute;
+            top: 5px;
+            right: 5px;
             border-radius: 20px;
             width: 200px;
             height: 40px;
             border: solid 3px orange;
             display: inline-block;
             background-color: transparent;
-            margin: 5px;
             padding: 0 30px 0 10px;
             font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
             font-size: 16px;
             outline: none;
-            position: relative;
-            top: -12px;
+            background-color: white;
+        }
+
+        #search-area {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 210px;
+            border-left: solid 2px black;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        #search-results {
+            position: absolute;
+            top: 50px;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        #search-results > .result {
+            height: 36px;
+            transition: height 0.3s ease;
+            overflow: hidden;
+        }
+
+        #search-results > .result.hidden {
+            height: 0;
+        }
+
+        #search-results > .result > .result-inner {
+          padding: 3px 4px;
+        }
+
+        #search-results > .result > .result-inner > button {
+          display: block;
+          border: 0;
+          background-color: white;
+          padding: 5px;
+          height: 30px;
+          width: 100%;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          text-align: left;
+          outline: none;
+        }
+
+        #search-results > .result > .result-inner > button.active {
+            background-color: #8888FF;
+        }
+        #search-results > .result > .result-inner > button:hover {
+            background-color: #CCCCCC;
+        }
+        #search-results > .result > .result-inner > button:active {
+            background-color: #AAAAAA;
         }
     </style>
 </head>
 <body>
     <div id="chart" class="chart">
-        <div class="controls">
-            <button id="expand-all">
-              <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
-                <path fill="none" stroke-width="8" stroke="orange" d="M 5,50 l 40,0 m -20,-20 l 0,40" />
-                <path fill="none" stroke-width="8" stroke="orange" d="M 55,50 l 40,0 m -20,-20 l 0,40" />
-              </svg>
-            </button>
-            <button id="collapse-all">
-              <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
-                <path fill="none" stroke-width="8" stroke="orange" d="M 5,50 l 40,0" />
-                <path fill="none" stroke-width="8" stroke="orange" d="M 55,50 l 40,0" />
-              </svg>
-            </button>
-            <svg id="search-icon" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32">
+          <button id="expand-all">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
+              <path fill="none" stroke-width="8" stroke="orange" d="M 5,50 l 40,0 m -20,-20 l 0,40" />
+              <path fill="none" stroke-width="8" stroke="orange" d="M 55,50 l 40,0 m -20,-20 l 0,40" />
+            </svg>
+          </button>
+          <button id="collapse-all">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
+              <path fill="none" stroke-width="8" stroke="orange" d="M 5,50 l 40,0" />
+              <path fill="none" stroke-width="8" stroke="orange" d="M 55,50 l 40,0" />
+            </svg>
+          </button>
+          <div id="search-area" style="display: none">
+            <div id="search-results"></div>
+          </div>
+          <input id="search" type="text" autocomplete="off" />
+          <svg id="search-icon" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32">
               <circle cx="12" cy="12" r="10"
                       fill="none" stroke-width="2" stroke="orange" />
               <path d="M 19.5,19.5 l 10,10" stroke-width="4" stroke="orange" />
-            </svg>
-            <input id="search" type="text" autocomplete="off" />
-        </div>
+          </svg>
         <svg xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid slice" viewBox="-600 -600 1200 1200" pointer-events="all">
             <defs>
                 <linearGradient id="selected-entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
