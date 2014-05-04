@@ -2,7 +2,6 @@
 
 //TODO:
 /*
-Touch and scroll in search
 search keyboard events
 */
 
@@ -123,9 +122,6 @@ var relationTypes = {
         dxRel = -dxRel;
       }
       var fromX = fromNode.getLeft() + 10 + ((fromNode.width - 20) / 4) * (absMaxOne(dxRel) + 1);
-//      dxRel = (dx / dy) / (toNode.width / toNode.height);
-//      var toX = toNode.x + ((toNode.width / 2) - 10) * - absMaxOne(dxRel);
-//      var toY = toNode.getTop();
       return renderPathWithDiamond(fromX, fromY, toNode.x, toNode.y);
     }
   },
@@ -137,13 +133,13 @@ var relationTypes = {
     dyGrow: 50, // push down hard
     dyShrink: 10, 
     strokeWidth: 2,
-    fill: true,
     renderPath: function (fromNode, toNode) {
-      var fromX = (fromNode.getRight() - 40);
-      var fromY = fromNode.getBottom();
-      var toX = toNode.getLeft() + 20;
-      var toY = toNode.getTop();
-      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
+      return relationTypes.ownsMany.renderPath(fromNode, toNode) + "Z";
+//      var fromX = (fromNode.getRight() - 40);
+//      var fromY = fromNode.getBottom();
+//      var toX = toNode.getLeft() + 20;
+//      var toY = toNode.getTop();
+//      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
     }
   },
   role: {
@@ -369,15 +365,14 @@ function updateFixed(d) {
     updated.append("path")
       .attr("class", "pin")
       .attr("d", pinPath)
-      .attr("fill", "darkred")
+      .attr("fill", "#86A102")
       .attr("transform", "scale(0.025) translate(" + (40 * d.width / 2) + " -350) rotate(45)");
   } else {
     updated.select(".pin").remove();
   }
-}
+};
 
-// init events
-d3.select("#expand-all").on("click", function () {
+function expandAll() {
   visibleEntities.forEach(function (d) {
     if (d.selected && !d.expanded) {
       d.expanded = true;
@@ -386,8 +381,9 @@ d3.select("#expand-all").on("click", function () {
     redraw();
     force.resume();
   });
-});
-d3.select("#collapse-all").on("click", function () {
+};
+
+function collapseAll() {
   visibleEntities.forEach(function (d) {
     if (d.expanded) {
       d.expanded = false;
@@ -395,7 +391,13 @@ d3.select("#collapse-all").on("click", function () {
     markAndSweep();
     redraw();
   });
-});
+};
+
+// init events
+
+// Top right controls
+d3.select("#expand-all").on("click", expandAll);
+d3.select("#collapse-all").on("click", collapseAll);
 d3.select("#search")
   .on("focus", function () {
     searchAreaElement.style("display", "");
@@ -407,15 +409,17 @@ d3.select("#search")
     function escapeRegExp(s) {
       return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     }
-    var query = new RegExp("\\b"+escapeRegExp(this.value), "g");
+    var query = new RegExp("\\b" + escapeRegExp(this.value.toLowerCase()), "g");
     graphData.nodes.forEach(function (d) {
-      d.searchHidden = !query.test(d.text);
+      d.searchHidden = !query.test(d.text.toLowerCase());
     });
     searchResults.classed("hidden", function (d) { return d.searchHidden; });
   });
 d3.select("#handle-zoom")
   .call(d3.behavior.zoom().on("zoom", rescale))
   .on("dblclick.zoom", null);
+
+// focus controls
 expandElement.on("click", expand);
 offElement.on("click", off);
 pinElement.on("click", unpin);
@@ -427,7 +431,7 @@ backgroundElement.on("mousedown", function () {
     updateFocus();
   }
   lastBackgroundMousedownPosition = null;
-});;
+});
 
 // init force
 var force = d3.layout.force()
@@ -464,7 +468,7 @@ var drag = force.drag()
 
 function entitiesRepel(e) {
   // Special repelling behavior
-  var k = 0.66 * e.alpha;
+  var k = 2 * e.alpha;
   visibleEntities.forEach(function (entity) {
     if (!entity.fixed) {
       visibleEntities.forEach(function (otherEntity) {
@@ -503,7 +507,7 @@ function entitiesRepel(e) {
 
 function edgesAttract(e) {
   // Edge attraction behavior
-  var k = 0.005 * e.alpha;
+  var k = 0.025 * e.alpha;
   visibleRelations.forEach(function (relation) {
     var type = relationTypes[relation.type];
     var dx = relation.target.px - relation.source.px;
@@ -534,9 +538,9 @@ function edgesAttract(e) {
 };
 
 function tick(e) {
-  if(e.alpha > 0.05) {
+//  if(e.alpha > 0.05) {
     e.alpha = 0.05; // do not start too fast
-  }
+//  }
   for (var i = 0; i < 10; i++) {
     if(i > 0) {
       visibleEntities.forEach(function (entity) {
@@ -622,6 +626,7 @@ var redraw = function () {
 };
 
 function showAndFocus(d) {
+  d3.event.preventDefault();
   if (!d.visible) {
     d.selected = true;
     showEntity(d, { x: 0, y: 0 }, 0, 0, 0);

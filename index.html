@@ -1,20 +1,20 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
 <title>Force Editor</title>
-<script src="lib/d3.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+    <script src="lib/d3.js"></script>
     <style>
         * {
-          box-sizing: border-box;
+            box-sizing: border-box;
         } 
 
-         html {
-             height: 100%;
-             margin: 0;
-             padding: 0;
-             overflow: hidden;
-         }
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
 
         body {
             font: 13px sans-serif;
@@ -67,13 +67,21 @@
             stroke: url(#selected-role-relation-gradient);
         }
 
+        .link.parts {
+            fill: rgb(128,128,128);
+        }
+
+        .link.parts.selected {
+            fill: rgb(16,16,192);
+        }
+
         #chart > button {
             position: absolute;
             padding: 0;
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            border: solid 3px orange;
+            border: solid 3px #FF4C05;
             display: inline-block;
             background-color: transparent;
             margin: 5px;
@@ -111,7 +119,7 @@
             border-radius: 20px;
             width: 200px;
             height: 40px;
-            border: solid 3px orange;
+            border: solid 3px #FF4C05;
             display: inline-block;
             background-color: transparent;
             padding: 0 30px 0 10px;
@@ -184,14 +192,14 @@
     <div id="chart" class="chart">
           <button id="expand-all">
             <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
-              <path fill="none" stroke-width="8" stroke="orange" d="M 5,50 l 40,0 m -20,-20 l 0,40" />
-              <path fill="none" stroke-width="8" stroke="orange" d="M 55,50 l 40,0 m -20,-20 l 0,40" />
+              <path fill="none" stroke-width="8" stroke="#FF4C05" d="M 5,50 l 40,0 m -20,-20 l 0,40" />
+              <path fill="none" stroke-width="8" stroke="#FF4C05" d="M 55,50 l 40,0 m -20,-20 l 0,40" />
             </svg>
           </button>
           <button id="collapse-all">
             <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 100 100">
-              <path fill="none" stroke-width="8" stroke="orange" d="M 5,50 l 40,0" />
-              <path fill="none" stroke-width="8" stroke="orange" d="M 55,50 l 40,0" />
+              <path fill="none" stroke-width="8" stroke="#FF4C05" d="M 5,50 l 40,0" />
+              <path fill="none" stroke-width="8" stroke="#FF4C05" d="M 55,50 l 40,0" />
             </svg>
           </button>
           <div id="search-area" style="display: none">
@@ -200,8 +208,8 @@
           <input id="search" type="text" autocomplete="off" />
           <svg id="search-icon" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32">
               <circle cx="12" cy="12" r="10"
-                      fill="none" stroke-width="2" stroke="orange" />
-              <path d="M 19.5,19.5 l 10,10" stroke-width="4" stroke="orange" />
+                      fill="none" stroke-width="2" stroke="#FF4C05" />
+              <path d="M 19.5,19.5 l 10,10" stroke-width="4" stroke="#FF4C05" />
           </svg>
         <svg xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid slice" viewBox="-600 -600 1200 1200" pointer-events="all">
             <defs>
@@ -234,26 +242,26 @@
                     <g id="entities">
                     </g>
                     <g id="focus" transform="translate(0,0)">
-                        <rect id="focus-border" x="-100" y="-20" width="200" height="40" fill="none" stroke-width="3" stroke="orange" rx="15" ry="15" pointer-events="none" />
+                        <rect id="focus-border" x="-100" y="-20" width="200" height="40" fill="none" stroke-width="3" stroke="#FF4C05" rx="15" ry="15" pointer-events="none" />
                         <g id="focus-off" transform="translate(80,-50)">
-                            <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="3" stroke="orange" />
-                            <path fill="none" stroke-width="4" stroke="orange" d="M-10,-10 l20,20 M-10,10 l 20, -20" />
+                            <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="3" stroke="#FF4C05" />
+                            <path fill="none" stroke-width="4" stroke="#FF4C05" d="M-10,-10 l20,20 M-10,10 l 20, -20" />
                         </g>
                         <g id="focus-expand" transform="translate(-120,0)">
-                            <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="3" stroke="orange" />
-                            <path id="focus-expand-plus" fill="none" stroke-width="4" stroke="orange" d="M -10,0 l 20,0 M 0,-10 l 0,20" />
-                            <path id="focus-expand-minus" fill="none" stroke-width="4" stroke="orange" d="M -10,0 l 20,0" />
+                            <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="3" stroke="#FF4C05" />
+                            <path id="focus-expand-plus" fill="none" stroke-width="4" stroke="#FF4C05" d="M -10,0 l 20,0 M 0,-10 l 0,20" />
+                            <path id="focus-expand-minus" fill="none" stroke-width="4" stroke="#FF4C05" d="M -10,0 l 20,0" />
                         </g>
                         <g id="focus-pin" transform="translate(-80,-50)">
-                            <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="3" stroke="orange" />
-                            <path fill="orange" id="pin-path" d="M150.061,232.739l-67.232,67.868  c-3.363,3.267-5.453,7.898-5.453,12.991c0,9.991,8.083,18.173,17.989,18.173h127.379
+                            <circle cx="0" cy="0" r="20" fill="rgba(255,255,255,0.5)" stroke-width="3" stroke="#FF4C05" />
+                            <path fill="#FF4C05" id="pin-path" d="M150.061,232.739l-67.232,67.868  c-3.363,3.267-5.453,7.898-5.453,12.991c0,9.991,8.083,18.173,17.989,18.173h127.379
                       V445.34c0,12.536,10.177,22.711,22.713,22.711  c12.537,0,22.715-10.175,22.715-22.711V331.771h136.46c9.899,0,17.992-8.182,17.992-18.173
                       c0-4.993-2.006-9.536-5.269-12.811  l-67.417-68.143V77.375h13.631c12.535,0,22.715-10.177,22.715-22.713c0-12.536-10.18-22.713-22.715-22.713
                       H136.432  c-12.536,0-22.713,10.177-22.713,22.713c0,12.537,10.177,22.713,22.713,22.713h13.629V232.739z M231.83,95.548v118.109
                       c0,9.996-8.176,18.172-18.172,18.172c-9.994,0-18.171-8.176-18.171-18.172V95.548c0-9.996,8.177-18.173,18.171-18.173
                       C223.653,77.375,231.83,85.552,231.83,95.548z" transform="scale(0.06) translate(-240 -260)" />
                             <path fill="none" stroke-width="5" stroke="white" d="M 0,-18.5 l 0,37" transform="rotate(45 0 0)" />
-                            <path fill="none" stroke-width="3" stroke="orange" d="M 0,-18.5 l 0,37" transform="rotate(45 0 0)" />
+                            <path fill="none" stroke-width="3" stroke="#FF4C05" d="M 0,-18.5 l 0,37" transform="rotate(45 0 0)" />
                         </g>
                     </g>
                 </g>
