@@ -68,7 +68,8 @@ var relationTypes = {
       var dy = toY - fromY;
       var halfY = dy / 2;
       return "M" + fromX + "," + fromY
-        + "c 0," + halfY + " " + dx + "," + halfY + " " + dx + "," + dy;
+//        + "c 0," + halfY + " " + dx + "," + halfY + " " + dx + "," + dy;
+          + "l" + dx + "," + dy;
     }
   },
   many: {
@@ -142,7 +143,7 @@ var relationTypes = {
 //      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
     }
   },
-  role: {
+  roleRight: {
     preferredDx: 300,
     preferredDy: 0,
     dxGrow: 50,
@@ -151,15 +152,6 @@ var relationTypes = {
     dyShrink: 3,
     strokeWidth: 10,
     stroke: "url(#role-relation-gradient)",
-    renderPathOld: function (fromNode, toNode) {
-      var fromX = (fromNode.getLeft());
-      var fromY = fromNode.y;
-      var toX = toNode.getRight();
-      var toY = toNode.y;
-      return "M" + (toX + 8) + "," + toY
-        + "l0,4 l-8,0 l0,-8 l8,0 l0,4 "
-        + "L" + fromX + "," + fromY;
-    },
     renderPath: function (fromNode, toNode) {
       var fromX = fromNode.getRight();
       var fromY = fromNode.y;
@@ -168,7 +160,27 @@ var relationTypes = {
       var dx = toX - fromX;
       var dy = toY - fromY;
       return "M" + fromX + "," + fromY
-        + "c 50,0 " + (dx-50) + "," + dy + " " + dx + "," + dy;
+        + "c 50,0 " + (dx - 50) + "," + dy + " " + dx + "," + dy;
+    }
+  },
+  role: {
+    preferredDx: 0,
+    preferredDy: -300,
+    dxGrow: 3,
+    dxShrink: 3,
+    dyGrow: 5,
+    dyShrink: 50,
+    strokeWidth: 10,
+    stroke: "url(#role-relation-gradient)",
+    renderPath: function (fromNode, toNode) {
+      var fromX = fromNode.x;
+      var fromY = fromNode.getTop();
+      var toX = toNode.x;
+      var toY = toNode.getBottom();
+      var dx = toX - fromX;
+      var dy = toY - fromY;
+      return "M" + fromX + "," + fromY
+        + "c 0,-50 " + dx + "," + (dy+50) + " " + dx + "," + dy;
     }
   }
 };
@@ -182,20 +194,20 @@ var focus = null;
 
 // Elements
 
-var backgroundElement = d3.select("#background");
-var focusElement = d3.select("#focus");
-var focusBorderElement = d3.select("#focus-border");
-var offElement = d3.select("#focus-off");
-var expandElement = d3.select("#focus-expand");
-var plusElement = d3.select("#focus-expand-plus");
-var minusElement = d3.select("#focus-expand-minus");
-var pinElement = d3.select("#focus-pin");
-var searchAreaElement = d3.select("#search-area");
-var visualization = d3.select("#visualization");
+var backgroundElement = d3.select(".background");
+var focusElement = d3.select(".focus");
+var focusBorderElement = d3.select(".focus-border");
+var offElement = d3.select(".focus-off");
+var expandElement = d3.select(".focus-expand");
+var plusElement = d3.select(".focus-expand-plus");
+var minusElement = d3.select(".focus-expand-minus");
+var pinElement = d3.select(".focus-pin");
+var searchAreaElement = d3.select(".search-area");
+var visualization = d3.select(".visualization");
 
-var entity = visualization.select("#entities").selectAll(".entity");
-var link = visualization.select("#links").selectAll(".link");
-var searchResults = d3.select("#search-results").selectAll(".result");
+var entity = visualization.select(".entities").selectAll(".entity");
+var link = visualization.select(".relations").selectAll(".link");
+var searchResults = d3.select(".search-results").selectAll(".result");
 
 // Helper functions
 
@@ -228,7 +240,7 @@ var positionFocus = function () {
 };
 
 function getLocalToSVGRatio() {
-  var divNode = d3.select("#chart")[0][0];
+  var divNode = d3.select(".chart")[0][0];
   var divWidth = divNode.clientWidth;
   var divHeight = divNode.clientHeight;
   var max = Math.max(divWidth, divHeight);
@@ -236,7 +248,7 @@ function getLocalToSVGRatio() {
 }
 
 function toSVGCoordinates(xy) {
-  var divNode = d3.select("#chart")[0][0];
+  var divNode = d3.select(".chart")[0][0];
   var divWidth = divNode.clientWidth;
   var divHeight = divNode.clientHeight;
   var max = Math.max(divWidth, divHeight);
@@ -396,9 +408,9 @@ function collapseAll() {
 // init events
 
 // Top right controls
-d3.select("#expand-all").on("click", expandAll);
-d3.select("#collapse-all").on("click", collapseAll);
-d3.select("#search")
+d3.select(".expand-all").on("click", expandAll);
+d3.select(".collapse-all").on("click", collapseAll);
+d3.select(".search")
   .on("focus", function () {
     searchAreaElement.style("display", "");
   })
@@ -415,7 +427,7 @@ d3.select("#search")
     });
     searchResults.classed("hidden", function (d) { return d.searchHidden; });
   });
-d3.select("#handle-zoom")
+d3.select(".handle-zoom")
   .call(d3.behavior.zoom().on("zoom", rescale))
   .on("dblclick.zoom", null);
 
@@ -617,7 +629,7 @@ var redraw = function () {
     .attr("stroke", function (d) { return relationTypes[d.type].stroke || "black"; })
     .attr("id", function (d) { return d.id; });
 
-  link.attr("class", function (d) { return "link " + d.type + ((d.source.selected && d.target.selected) ? " selected" : ""); });
+  link.attr("class", function (d) { return "link " + d.type + (d.mandatory===false?" optional":"") + ((d.source.selected && d.target.selected) ? " selected" : ""); });
 
   link.exit().remove();
 

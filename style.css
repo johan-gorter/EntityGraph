@@ -1,0 +1,196 @@
+﻿.chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.svg-defs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.chart > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.entity {
+  fill: #000;
+  cursor: move;
+}
+
+.entity .text {
+  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  font-size: 15px;
+  fill: white;
+}
+
+.link {
+  stroke: rgb(128,128,128);
+  stroke-width: 2;
+}
+
+.link.selected {
+  stroke: rgb(16,16,192);
+}
+
+.link.one {
+  stroke-width: 1;
+}
+
+.link.optional {
+  stroke-dasharray: 3, 3;
+}
+
+.link.role {
+  stroke: url(#role-relation-gradient);
+  stroke-width: 10;
+}
+
+.link.role.selected {
+  stroke: url(#selected-role-relation-gradient);
+}
+
+.link.parts {
+  fill: rgb(128,128,128);
+}
+
+.link.parts.selected {
+  fill: rgb(16,16,192);
+}
+
+.chart > button {
+  position: absolute;
+  padding: 0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border: solid 3px #FF4C05;
+  display: inline-block;
+  background-color: transparent;
+  margin: 5px;
+  outline: none;
+}
+
+.chart > button > svg {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 30px;
+  height: 30px;
+}
+
+.chart > button > svg > path {
+  fill: none;
+  stroke-width: 8;
+  stroke: #FF4C05;
+}
+
+.expand-all {
+  right: 260px;
+}
+
+.collapse-all {
+  right: 210px;
+}
+
+.search-icon {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+}
+
+.search-icon > svg > circle {
+  fill: none;
+  stroke-width: 2;
+  stroke: #FF4C05;
+}
+
+.search-icon > svg > path {
+  stroke-width: 4;
+  stroke: #FF4C05;
+}
+
+.search {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  border-radius: 20px;
+  width: 200px;
+  height: 40px;
+  border: solid 3px #FF4C05;
+  display: inline-block;
+  background-color: transparent;
+  padding: 0 30px 0 10px;
+  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  font-size: 16px;
+  outline: none;
+  background-color: white;
+}
+
+.search-area {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 210px;
+  border-left: solid 2px black;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.search-results {
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.search-results > .result {
+  height: 36px;
+  transition: height 0.3s ease;
+  overflow: hidden;
+}
+
+.search-results > .result.hidden {
+  height: 0;
+}
+
+.search-results > .result > .result-inner {
+  padding: 3px 4px;
+}
+
+.search-results > .result > .result-inner > button {
+  display: block;
+  border: 0;
+  background-color: white;
+  padding: 5px;
+  height: 30px;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+  outline: none;
+}
+
+.search-results > .result > .result-inner > button.active {
+  background-color: #8888FF;
+}
+
+.search-results > .result > .result-inner > button:hover {
+  background-color: #CCCCCC;
+}
+
+.search-results > .result > .result-inner > button:active {
+  background-color: #AAAAAA;
+}
