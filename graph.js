@@ -53,16 +53,16 @@ var relationTypes = {
     }
   },
   one: {
-    preferredDx: 200,
+    preferredDx: -200,
     preferredDy: -150,
-    dxGrow: 3,
-    dxShrink: 1,
+    dxGrow: 1,
+    dxShrink: 3,
     dyGrow: 3,
     dyShrink: 1,
     renderPath: function (fromNode, toNode) {
-      var fromX = (fromNode.getRight() - fromNode.width / 4);
+      var fromX = (fromNode.getLeft() + fromNode.width / 4);
       var fromY = fromNode.y;
-      var toX = toNode.getLeft() + toNode.width / 4;
+      var toX = toNode.getRight() - toNode.width / 4;
       var toY = toNode.y;
       var dx = toX - fromX;
       var dy = toY - fromY;
@@ -73,15 +73,15 @@ var relationTypes = {
     }
   },
   many: {
-    preferredDx: 200,
+    preferredDx: -200,
     preferredDy: 150,
-    dxGrow: 3,
-    dxShrink: 1,
+    dxGrow: 1,
+    dxShrink: 3,
     dyGrow: 3,
     dyShrink: 1,
     renderPath: function (fromNode, toNode) {
-      var fromX = (fromNode.getRight() - 10);
-      var toX = toNode.getLeft() + 10;
+      var fromX = (fromNode.getLeft() + 10);
+      var toX = toNode.getRight() - 10;
       var dx = toX - fromX;
       var dy = toNode.y - fromNode.y;
       return "M" + fromX + "," + fromNode.y
@@ -89,7 +89,7 @@ var relationTypes = {
     }
   },
   ownsOne: {
-    preferredDx: -300,
+    preferredDx: 300,
     preferredDy: 0,
     dxGrow: 5,
     dxShrink: 5,
@@ -105,7 +105,7 @@ var relationTypes = {
     }
   },
   ownsMany: {
-    preferredDx: -100,
+    preferredDx: 100,
     preferredDy: 150,
     dxGrow: 5,
     dxShrink: 5,
@@ -122,7 +122,7 @@ var relationTypes = {
         fromY = fromNode.getTop();
         dxRel = -dxRel;
       }
-      var fromX = fromNode.getLeft() + 10 + ((fromNode.width - 20) / 4) * (absMaxOne(dxRel) + 1);
+      var fromX = fromNode.x + ((fromNode.width - 20) / 4) * (absMaxOne(dxRel) + 1);
       return renderPathWithDiamond(fromX, fromY, toNode.x, toNode.y);
     }
   },
@@ -143,27 +143,29 @@ var relationTypes = {
 //      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
     }
   },
-  roleRight: {
-    preferredDx: 300,
+  role: {
+    preferredDx: -300,
     preferredDy: 0,
-    dxGrow: 50,
-    dxShrink: 5,
+    dxGrow: 5,
+    dxShrink: 50,
     dyGrow: 3,
     dyShrink: 3,
     strokeWidth: 10,
-    stroke: "url(#role-relation-gradient)",
     renderPath: function (fromNode, toNode) {
-      var fromX = fromNode.getRight();
+      var fromX = fromNode.getLeft();
       var fromY = fromNode.y;
-      var toX = toNode.getLeft();
+      var toX = toNode.getRight();
       var toY = toNode.y;
       var dx = toX - fromX;
       var dy = toY - fromY;
+      if(dx === 0.0 || dy === 0.0) {
+        return "M" + fromX + "," + fromY + " l " + dx + "," + dy + "m 1,1";
+      }
       return "M" + fromX + "," + fromY
-        + "c 50,0 " + (dx - 50) + "," + dy + " " + dx + "," + dy;
+        + "c -50,0 " + (dx + 50) + "," + dy + " " + dx + "," + dy;
     }
   },
-  role: {
+  roleTop: {
     preferredDx: 0,
     preferredDy: -300,
     dxGrow: 3,
@@ -191,6 +193,7 @@ var graphData = { nodes: [], edges: [], startNodeId: null };
 var visibleEntities;
 var visibleRelations;
 var focus = null;
+var oldSearchValue = "";
 
 // Elements
 
@@ -204,6 +207,7 @@ var minusElement = d3.select(".focus-expand-minus");
 var pinElement = d3.select(".focus-pin");
 var searchAreaElement = d3.select(".search-area");
 var visualization = d3.select(".visualization");
+var droplocation = d3.select(".droplocation");
 
 var entity = visualization.select(".entities").selectAll(".entity");
 var link = visualization.select(".relations").selectAll(".link");
@@ -405,6 +409,10 @@ function collapseAll() {
   });
 };
 
+function snapToGrid(x) {
+  return 10*Math.round(x/10);
+}
+
 // init events
 
 // Top right controls
@@ -417,15 +425,67 @@ d3.select(".search")
   .on("blur", function () {
     searchAreaElement.style("display", "none");
   })
+  .on("keydown", function () {
+    if (d3.event.keyCode === 40 /*down*/) {
+      d3.event.preventDefault();
+      for (var i = 0; i < graphData.nodes.length - 1; i++) {
+        if (graphData.nodes[i].searchActive) {
+          for (var j = i + 1; j < graphData.nodes.length; j++) {
+            if (!graphData.nodes[j].searchHidden) {
+              graphData.nodes[i].searchActive = false;
+              graphData.nodes[j].searchActive = true;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      searchResults.classed("active", function (d) { return d.searchActive; });
+    } else if (d3.event.keyCode === 38 /*up*/) {
+      d3.event.preventDefault();
+      for (var i = 1; i < graphData.nodes.length; i++) {
+        if (graphData.nodes[i].searchActive) {
+          for (var j = i - 1; j >= 0; j--) {
+            if (!graphData.nodes[j].searchHidden) {
+              graphData.nodes[i].searchActive = false;
+              graphData.nodes[j].searchActive = true;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      searchResults.classed("active", function (d) { return d.searchActive; });
+    } else if (d3.event.keyCode === 13 /*enter*/) {
+      d3.event.preventDefault();
+      for (var i = 1; i < graphData.nodes.length; i++) {
+        if (graphData.nodes[i].searchActive) {
+          showAndFocus(graphData.nodes[i]);
+          break;
+        }
+      }
+    }
+  })
   .on("keyup", function () {
     function escapeRegExp(s) {
       return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     }
-    var query = new RegExp("\\b" + escapeRegExp(this.value.toLowerCase()), "g");
-    graphData.nodes.forEach(function (d) {
-      d.searchHidden = !query.test(d.text.toLowerCase());
-    });
-    searchResults.classed("hidden", function (d) { return d.searchHidden; });
+    if(this.value !== oldSearchValue) {
+      oldSearchValue = this.value;
+      var query = new RegExp("\\b" + escapeRegExp(this.value.toLowerCase()), "g");
+      var first = true;
+      graphData.nodes.forEach(function (d) {
+        d.searchHidden = !query.test(d.text.toLowerCase());
+        if(d.searchHidden) {
+          d.searchActive = false;
+        } else {
+          d.searchActive = first;
+          first = false;
+        }
+      });
+      searchResults.classed("hidden", function (d) { return d.searchHidden; });
+      searchResults.classed("active", function (d) { return d.searchActive; });
+    }
   });
 d3.select(".handle-zoom")
   .call(d3.behavior.zoom().on("zoom", rescale))
@@ -459,24 +519,30 @@ visibleRelations = [];
 
 var drag = force.drag()
   .on("drag", function (d, i) {
-    force.resume();
     d.dragMoved = true;
-}).on("dragstart", function (d) {
+    droplocation.attr("display", "");
+    droplocation.attr("width", d.width);
+    droplocation.attr("height", d.height);
+    droplocation.attr("transform", "translate(" + [d.px - (d.width / 2), d.py - (d.height / 2)] + ")");
+    d.px = snapToGrid(d.px);
+    d.py = snapToGrid(d.py);
+  }).on("dragstart", function (d) {
     focus = null;
     updateFocus();
     d.selected = true;
     d.dragMoved = false;
     d3.event.sourceEvent.stopPropagation();
     redraw();
-}).on("dragend", function (d) {
-  if (d.dragMoved) {
-    d.fixed = true;
-    updateFixed(d);
-    force.resume();
-  }
-  focus = d;
-  updateFocus();
-});
+  }).on("dragend", function (d) {
+    if (d.dragMoved) {
+      d.fixed = true;
+      updateFixed(d);
+      force.resume();
+    }
+    focus = d;
+    updateFocus();
+    droplocation.attr("display", "none");
+  });
 
 function entitiesRepel(e) {
   // Special repelling behavior
@@ -591,6 +657,7 @@ var redraw = function () {
 
   enteringEntity.append("svg:text")
     .attr("class", "text")
+    .attr("text-anchor", "middle")
     .attr("x", 10)
     .attr("y", 4)
     .attr("dy", 15)
@@ -601,8 +668,9 @@ var redraw = function () {
     .attr("width", function (d) {
       var text = this.parentNode.lastChild;
       var textWidth = text.getComputedTextLength();
+      textWidth = Math.round(textWidth / 20) * 20;
       // Cheating here: Making adjustments to the data
-      d.width = Math.max(100, textWidth + 20);
+      d.width = Math.max(110, textWidth + 30);
       d.height = 30;
       return d.width;
     });
@@ -618,7 +686,9 @@ var redraw = function () {
     })
     .attr("filter", function (d) {
     return d.expanded ? "url(#shadow)" : "";
-  });
+    });
+  enteringEntity.select(".text")
+    .attr("x", function (d) { return (d.width / 2); });
 
   entity.exit().remove();
 
@@ -684,6 +754,9 @@ var graphDataLoaded = function (data) {
     node.visible = false;
     node.selected = false;
   });
+  if(graphData.nodes.length > 0) {
+    graphData.nodes[0].searchActive = true;
+  }
   for (var edgeType in graphData.edges) {
     var edges = graphData.edges[edgeType];
     edges.forEach(function(edge){

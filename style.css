@@ -183,7 +183,7 @@
   outline: none;
 }
 
-.search-results > .result > .result-inner > button.active {
+.search-results > .result.active > .result-inner > button {
   background-color: #8888FF;
 }
 
