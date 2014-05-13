@@ -32,8 +32,48 @@ var renderPathWithDiamond = function (fromX, fromY, toX, toY) {
     + " L" + toX + "," + toY;
 };
 
+var renderPathWithArrow = function (fromX, fromY, toX, toY) {
+  var dx = toX - fromX;
+  var dy = toY - fromY;
+  var length = Math.sqrt(dx * dx + dy * dy);
+  var ndx = dx / length;
+  var ndy = dy / length;
+  return "M" + toX + "," + toY
+    + " l" + (-8 * ndx - 3 * ndy) + "," + (-8 * ndy + 3 * ndx)
+    + " m" + (8 * ndx + 3 * ndy) + "," + (8 * ndy - 3 * ndx)
+    + " l" + (-8 * ndx + 3 * ndy) + "," + (-8 * ndy - 3 * ndx)
+    + " m" + (8 * ndx - 3 * ndy) + "," + (8 * ndy + 3 * ndx)
+    + " l" + -dx + "," + -dy;
+};
+
 var absMaxOne = function (n) {
   return Math.max(-1, Math.min(1, n));
+};
+
+var intersectionWithEntity = function (fromX, fromY, entity) {
+  var dx = entity.x - fromX;
+  var dy = entity.y - fromY;
+  var adx = Math.abs(dx);
+  var ady = Math.abs(dy);
+  var entityWidthHeightRatio = (entity.width-40) / entity.height; //-40: angle must not be too sharp
+  var topOrBottom = adx / ady < entityWidthHeightRatio;
+  var toX, toY;
+  if(topOrBottom) {
+    toX = - dx * (entity.height / 2) / ady;
+    toY = dy > 0 ? -entity.height / 2 : entity.height / 2;
+    // move away from the rounded borders
+    var maxX = entity.width / 2 - 10;
+    if (toX > maxX) toX = maxX;
+    if(toX < -maxX) toX = -maxX;
+  } else {
+    toX = dx > 0 ? -entity.width / 2 : entity.width / 2;
+    toY = - dy * (entity.width / 2) / adx;
+    // move away from the rounded borders
+    var maxY = entity.height / 2 - 10;
+    if (toY > maxY) toY = maxY;
+    if (toY < -maxY) toY = -maxY;
+  }
+  return [entity.x+toX, entity.y+toY];
 };
 
 var relationTypes = {
@@ -62,14 +102,8 @@ var relationTypes = {
     renderPath: function (fromNode, toNode) {
       var fromX = (fromNode.getLeft() + fromNode.width / 4);
       var fromY = fromNode.y;
-      var toX = toNode.getRight() - toNode.width / 4;
-      var toY = toNode.y;
-      var dx = toX - fromX;
-      var dy = toY - fromY;
-      var halfY = dy / 2;
-      return "M" + fromX + "," + fromY
-//        + "c 0," + halfY + " " + dx + "," + halfY + " " + dx + "," + dy;
-          + "l" + dx + "," + dy;
+      var to = intersectionWithEntity(fromX, fromY, toNode);
+      return renderPathWithArrow(fromX, fromY, to[0], to[1]);
     }
   },
   many: {
@@ -727,6 +761,8 @@ function fillSearchResults() {
     .append("button")
     .text(function (d) { return d.text; })
     .on("mousedown", showAndFocus);
+
+  searchResults.classed("active", function (d) { return d.searchActive; });
 }
 
 var graphDataLoaded = function (data) {
