@@ -55,8 +55,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
                 <defs>
                     <linearGradient id="selected-entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:rgb(32,32,192);stop-opacity:1"></stop>
-                        <stop offset="100%" style="stop-color:rgb(16,16,128);stop-opacity:1"></stop>
+                        <stop offset="0%" class="selected-entity-gradient-from"></stop>
+                        <stop offset="100%" class="selected-entity-gradient-to"></stop>
                     </linearGradient>
                     <linearGradient id="entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" style="stop-color: rgb(192,192,192); stop-opacity: 1; "></stop>
@@ -70,10 +70,10 @@
                       <stop offset="0%" style="stop-color: rgb(16,16,128); stop-opacity: 0.5"></stop>
                       <stop offset="100%" style="stop-color:rgb(16,16,128); stop-opacity: 0.1"></stop>
                     </linearGradient>
-                    <filter id="shadow" width="400%" height="400%" x="-100%" y="-100%">
-                        <feGaussianBlur result="blurOut" in="SourceGraphic" stdDeviation="8" />
-                        <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
-                    </filter>
+                  <filter id="entity-expanded-shadow" width="400%" height="400%" x="-100%" y="-100%">
+                    <feGaussianBlur result="blurOut" in="SourceGraphic" stdDeviation="8" />
+                    <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+                  </filter>
                 </defs>
             </svg>
         </div>

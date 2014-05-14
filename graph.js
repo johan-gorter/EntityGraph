@@ -719,7 +719,7 @@ var redraw = function () {
       return d.selected ? "url(#selected-entity-gradient)" : "url(#entity-gradient)";
     })
     .attr("filter", function (d) {
-    return d.expanded ? "url(#shadow)" : "";
+      return d.expanded ? "url(#entity-expanded-shadow)" : "none";
     });
   enteringEntity.select(".text")
     .attr("x", function (d) { return (d.width / 2); });

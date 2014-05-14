@@ -29,83 +29,8 @@
 </head>
 <body>
     
-  <div class="svg-defs">
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-      <defs>
-        <linearGradient id="selected-entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:rgb(32,32,192);stop-opacity:1"></stop>
-          <stop offset="100%" style="stop-color:rgb(16,16,128);stop-opacity:1"></stop>
-        </linearGradient>
-        <linearGradient id="entity-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color: rgb(192,192,192); stop-opacity: 1; "></stop>
-          <stop offset="100%" style="stop-color:rgb(128,128,128);stop-opacity:1"></stop>
-        </linearGradient>
-        <linearGradient id="role-relation-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color: rgb(0,0,0); stop-opacity: 0.1"></stop>
-          <stop offset="100%" style="stop-color:rgb(0,0,0); stop-opacity: 0.5"></stop>
-        </linearGradient>
-        <linearGradient id="selected-role-relation-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color: rgb(16,16,128); stop-opacity: 0.1"></stop>
-          <stop offset="100%" style="stop-color:rgb(16,16,128); stop-opacity: 0.5"></stop>
-        </linearGradient>
-        <filter id="shadow" width="400%" height="400%" x="-100%" y="-100%">
-          <feGaussianBlur result="blurOut" in="SourceGraphic" stdDeviation="8" />
-          <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
-        </filter>
-      </defs>
-    </svg>
-  </div>
-
-  <div class="chart">
-  </div>
-
-    <script>
-        function appendExpandAll(button) {
-          var svg = button.append("svg")
-              .attr("viewBox", "0 0 100 100");
-          svg.append("path")
-              .attr("d", "M 5,50 l 40,0 m -20,-20 l 0,40");
-          svg.append("path")
-              .attr("d", "M 55,50 l 40,0 m -20,-20 l 0,40");
-        };
-
-        function appendCollapseAll(button) {
-          var svg = button.append("svg")
-              .attr("viewBox", "0 0 100 100");
-          svg.append("path")
-              .attr("d", "M 5,50 l 40,0");
-          svg.append("path")
-              .attr("d", "M 55,50 l 40,0");
-        };
-
-        function appendSearchIcon(div) {
-          var svg = div.append("svg")
-              .attr("viewBox", "0 0 32 32");
-          svg.append("circle")
-              .attr({ cx: "12", cy: "12", r: "10" });
-          svg.append("path")
-              .attr("d", "M 19.5,19.5 l 10,10");
-        };
-
-        var chart = d3.select(".chart");
-        chart.append("button")
-            .attr("class", "expand-all")
-            .call(appendExpandAll);
-        chart.append("button")
-            .attr("class", "collapse-all")
-            .call(appendCollapseAll);
-        chart.append("div")
-            .attr("style", "display:none")
-            .append("div")
-            .attr("class", "search-results");
-        chart.append("input")
-            .attr({ "class": "search", type: "text", autocomplete: "off" });
-        chart.append("div")
-            .attr("class","search-icon")
-            .call(appendSearchIcon);
-    </script>
-
-<!--    <script src="graph.js"></script>-->
+    <script src="construction.js"></script>
+    <script src="graph.js"></script>
 
 </body>
 </html>
