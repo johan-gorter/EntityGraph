@@ -1,4 +1,4 @@
-﻿.chart {
+.chart {
   position: absolute;
   top: 0;
   left: 0;
@@ -18,10 +18,36 @@
   stop-color:rgb(32,32,192);
   stop-opacity:1
 }
-
 .selected-entity-gradient-to {
   stop-color:rgb(16,16,128);
   stop-opacity:1
+}
+
+.entity-gradient-from {
+  stop-color: rgb(192,192,192);
+  stop-opacity: 1; 
+}
+.entity-gradient-to {
+  stop-color:rgb(128,128,128);
+  stop-opacity:1
+}
+
+.role-relation-gradient-from {
+  stop-color: rgb(0,0,0); 
+  stop-opacity: 0.5
+}
+.role-relation-gradient-to {
+  stop-color:rgb(0,0,0);
+  stop-opacity: 0.1
+}
+
+.selected-role-relation-gradient-from {
+  stop-color: rgb(16,16,128); 
+  stop-opacity: 0.5
+}
+.selected-role-relation-gradient-to {
+  stop-color:rgb(16,16,128); 
+  stop-opacity: 0.1
 }
 
 .chart > svg {
@@ -98,6 +124,12 @@
 .chart > button > svg > path {
   fill: none;
   stroke-width: 8;
+  stroke: #FF4C05;
+}
+
+.focus {
+  fill: none;
+  stroke-width: 3;
   stroke: #FF4C05;
 }
 
