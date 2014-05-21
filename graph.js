@@ -358,6 +358,63 @@ window.createEntityGraph = function (appendTo) {
 
   // Helper functions
 
+  var makeSnapshot = function () {
+    var selected = [], i, e;
+    for (i = 0; i < visibleEntities.length; i = i + 1) {
+      e = visibleEntities[i];
+      if (e.selected) {
+        selected.push({id: e.id, expanded: e.expanded === true, fixed: e.fixed === true, x: e.x, y: e.y});
+      }
+    }
+    return {
+      selected: selected,
+      focus: focus ? focus.id : null
+    };
+  };
+  
+  var clearAll = function() {
+    focus = null;
+    for (var i=0; i<visibleEntities.length;i++) {
+      visibleEntities[i].selected = false;
+    }
+    markAndSweep();
+  }
+  
+  var applySnapshot = function(snapshot) {
+    clearAll();
+    for (var i = 0; i<snapshot.selected.length;i++) {
+      var selected = snapshot.selected[i];
+      var node = graphData.nodesById[selected.id];
+      if (node) {
+        node.selected = true;
+        node.x = node.px = selected.x;
+        node.y = node.py = selected.y;
+        node.expanded = selected.expanded;
+        node.fixed = selected.fixed;
+        node.visible = true;
+        visibleEntities.push(node);
+      }
+    }
+    for (var edgeType in graphData.edges) {
+      var edges = graphData.edges[edgeType];
+      for (i=0;i<edges.length;i++) {
+        var edge = edges[i];
+        if (edge.source.visible && edge.target.visible) {
+          showRelation(edge);
+        }
+      }
+    }
+    for (i=0;i<visibleEntities.length;i++) {
+      var entity = visibleEntities[i];
+      if (entity.expanded) {
+        updateExpanded(entity);
+      }
+    }
+    if (snapshot.focus) {
+      focus = graphData.nodesById[snapshot.focus];
+    }
+  }
+  
   var positionFocus = function () {
     focusElement.attr("transform", "translate(" + [focus.x, focus.y] + ")");
   };
@@ -553,7 +610,7 @@ window.createEntityGraph = function (appendTo) {
   // init events
   var entity = visualization.select(".entities").selectAll(".entity");
   var link = visualization.select(".relations").selectAll(".link");
-  var searchResults = d3.select(".search-results").selectAll(".result");
+  var searchResults = searchResultsElement.selectAll(".result");
 
 
   // Top right controls
@@ -599,7 +656,7 @@ window.createEntityGraph = function (appendTo) {
         searchResults.classed("active", function (d) { return d.searchActive; });
       } else if (d3.event.keyCode === 13) { /*enter*/
         d3.event.preventDefault();
-        for (i = 1; i < graphData.nodes.length; i = i + 1) {
+        for (i = 0; i < graphData.nodes.length; i = i + 1) {
           if (graphData.nodes[i].searchActive) {
             showAndFocus(graphData.nodes[i]);
             break;
@@ -785,6 +842,22 @@ window.createEntityGraph = function (appendTo) {
       positionFocus();
     }
   }
+  
+  var determineWidth = function(d) {
+    var text = d3.select(this.parentNode).select("text")[0][0];
+    var textWidth = text.getComputedTextLength();
+    textWidth = Math.round(textWidth / 20) * 20;
+    // Cheating here: Making adjustments to the data
+    d.width = Math.max(110, textWidth + 30);
+    d.height = 30;
+    return d.width;
+  }
+  
+  var updateTexts = function() {
+    entity.select("text").text(function(d){return d.text;});
+    entity.select("rect").attr("width", determineWidth);
+    entity.select(".text").attr("x", function (d) { return (d.width / 2); });
+  }
 
   var redraw = function () {
     entity = entity.data(visibleEntities, function (d) { return d.id; });
@@ -809,15 +882,7 @@ window.createEntityGraph = function (appendTo) {
       .text(function (d) { return d.text; });
 
     enteringEntity.select("rect")
-      .attr("width", function (d) {
-        var text = this.parentNode.lastChild;
-        var textWidth = text.getComputedTextLength();
-        textWidth = Math.round(textWidth / 20) * 20;
-        // Cheating here: Making adjustments to the data
-        d.width = Math.max(110, textWidth + 30);
-        d.height = 30;
-        return d.width;
-      });
+      .attr("width", determineWidth);
 
     enteringEntity
       .attr("width", function (d) {
@@ -839,11 +904,12 @@ window.createEntityGraph = function (appendTo) {
     link = link.data(visibleRelations, function (d) { return d.id; });
 
     link.enter().insert("path")
-      .attr("stroke-width", function (d) { return relationTypes[d.type].strokeWidth || 2; })
-      .attr("stroke", function (d) { return relationTypes[d.type].stroke || "black"; })
       .attr("id", function (d) { return d.id; });
 
-    link.attr("class", function (d) { return "link " + d.type + (d.mandatory === false ? " optional" : "") + ((d.source.selected && d.target.selected) ? " selected" : ""); });
+    link
+      .attr("stroke-width", function (d) { return relationTypes[d.type].strokeWidth || 2; })
+      .attr("stroke", function (d) { return relationTypes[d.type].stroke || "black"; })
+      .attr("class", function (d) { return "link " + d.type + (d.mandatory === false ? " optional" : "") + ((d.source.selected && d.target.selected) ? " selected" : ""); });
 
     link.exit().remove();
 
@@ -864,6 +930,7 @@ window.createEntityGraph = function (appendTo) {
 
   function fillSearchResults() {
     searchResults = searchResults.data(graphData.nodes);
+    searchResults.select("button").text(function (d) { return d.text; });
 
     searchResults.enter()
       .insert("div").attr("class", "result")
@@ -872,7 +939,53 @@ window.createEntityGraph = function (appendTo) {
       .text(function (d) { return d.text; })
       .on("mousedown", showAndFocus);
 
+    searchResults.exit().remove();
     searchResults.classed("active", function (d) { return d.searchActive; });
+  }
+  
+  function load(data) {
+    var edgeType;
+    graphData = data;
+    graphData.nodesById = {};
+    graphData.edgesById = {};
+    graphData.nodes.forEach(function (node) {
+      graphData.nodesById[node.id] = node;
+      node.height = 30;
+      node.width = 200;
+      node.getBottom = function () {
+        return this.y + this.height / 2;
+      };
+      node.getTop = function () {
+        return this.y - this.height / 2;
+      };
+      node.getLeft = function () {
+        return this.x - this.width / 2;
+      };
+      node.getRight = function () {
+        return this.x + this.width / 2;
+      };
+      node.outgoingRelations = [];
+      node.incomingRelations = [];
+      node.visible = false;
+      node.selected = false;
+    });
+    if (graphData.nodes.length > 0) {
+      graphData.nodes[0].searchActive = true;
+    }
+    for (edgeType in graphData.edges) {
+      var edges = graphData.edges[edgeType];
+      edges.forEach(function (edge) {
+        graphData.edgesById[edge.id] = edge;
+        edge.type = edgeType;
+        edge.source = graphData.nodesById[edge.from];
+        edge.target = graphData.nodesById[edge.to];
+        edge.source.outgoingRelations.push(edge);
+        edge.target.incomingRelations.push(edge);
+      });
+    }
+
+    visibleRelations.splice(0, visibleRelations.length);
+    visibleEntities.splice(0, visibleEntities.length);
   }
 
   redraw();
@@ -881,48 +994,7 @@ window.createEntityGraph = function (appendTo) {
 
   return {
     init: function (data) {
-      var edgeType;
-      graphData = data;
-      graphData.nodesById = {};
-      graphData.edgesById = {};
-      graphData.nodes.forEach(function (node) {
-        graphData.nodesById[node.id] = node;
-        node.height = 30;
-        node.width = 200;
-        node.getBottom = function () {
-          return this.y + this.height / 2;
-        };
-        node.getTop = function () {
-          return this.y - this.height / 2;
-        };
-        node.getLeft = function () {
-          return this.x - this.width / 2;
-        };
-        node.getRight = function () {
-          return this.x + this.width / 2;
-        };
-        node.outgoingRelations = [];
-        node.incomingRelations = [];
-        node.visible = false;
-        node.selected = false;
-      });
-      if (graphData.nodes.length > 0) {
-        graphData.nodes[0].searchActive = true;
-      }
-      for (edgeType in graphData.edges) {
-        var edges = graphData.edges[edgeType];
-        edges.forEach(function (edge) {
-          graphData.edgesById[edge.id] = edge;
-          edge.type = edgeType;
-          edge.source = graphData.nodesById[edge.from];
-          edge.target = graphData.nodesById[edge.to];
-          edge.source.outgoingRelations.push(edge);
-          edge.target.incomingRelations.push(edge);
-        });
-      }
-
-      visibleRelations.splice(0, visibleRelations.length);
-      visibleEntities.splice(0, visibleEntities.length);
+      load(data);
       focus = null;
       if (graphData.startNodeId) {
         var startNode = graphData.nodesById[graphData.startNodeId];
@@ -936,6 +1008,17 @@ window.createEntityGraph = function (appendTo) {
       }
       redraw();
       fillSearchResults();
+    },
+    
+    update: function(newData) {
+      var snapshot = makeSnapshot();
+      load(newData);
+      applySnapshot(snapshot);
+      redraw();
+      updateTexts();
+      tick({});
+      fillSearchResults();
+      updateFocus();
     }
   };
 };
