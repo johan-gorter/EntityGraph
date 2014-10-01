@@ -6,7 +6,7 @@
 window.createEntityGraph = function (appendTo) {
 
   "use strict";
-  
+
   // constants
   var width = 1200;
   var height = 1200;
@@ -19,130 +19,152 @@ window.createEntityGraph = function (appendTo) {
     "C223.653,77.375,231.83,85.552,231.83,95.548z";
 
   // Elements needed after construction phase
-  var expandAllElement, collapseAllElement,
-    searchElement, searchAreaElement, searchResultsElement,
-    backgroundElement, focusElement,
-    focusBorderElement, offElement,
-    expandElement, plusElement, minusElement,
-    pinElement, visualization, droplocation;
+  var expandAllElement,
+    collapseAllElement,
+    searchElement,
+    searchAreaElement,
+    searchResultsElement,
+    backgroundElement,
+    focusElement,
+    focusBorderElement,
+    offElement,
+    expandElement,
+    plusElement,
+    minusElement,
+    pinElement,
+    visualization,
+    droplocation;
 
   // Construction phase
   (function () {
-  
+
     // construction helper functions
 
     function appendDefs(parent) {
       var defs = parent.append("svg").append("defs");
+
       function appendLinearGradient(id, direction) {
         var gradient = defs.append("linearGradient")
-            .attr("id", id)
-            .attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", direction === "down" ? "0%" : "100%")
-            .attr("y2", direction === "down" ? "100%" : "0%");
+          .attr("id", id)
+          .attr("x1", "0%")
+          .attr("y1", "0%")
+          .attr("x2", direction === "down" ? "0%" : "100%")
+          .attr("y2", direction === "down" ? "100%" : "0%");
         gradient.append("stop")
-              .attr("offset", "0%")
-              .attr("class", id + "-from");
+          .attr("offset", "0%")
+          .attr("class", id + "-from");
         gradient.append("stop")
-            .attr("offset", "100%")
-            .attr("class", id + "-to");
+          .attr("offset", "100%")
+          .attr("class", id + "-to");
       }
+
       appendLinearGradient("entity-gradient", "down");
       appendLinearGradient("selected-entity-gradient", "down");
       appendLinearGradient("role-relation-gradient", "right");
       appendLinearGradient("selected-role-relation-gradient", "right");
       var filter = defs.append("filter").attr("id", "entity-expanded-shadow")
-          .attr("width", "400%").attr("height", "400%")
-          .attr("x", "-100%").attr("y", "-100%");
+        .attr("width", "400%").attr("height", "400%")
+        .attr("x", "-100%").attr("y", "-100%");
       filter.append("feGaussianBlur")
-          .attr("result", "blurOut").attr("in", "SourceGraphic").attr("stdDeviation", "8");
+        .attr("result", "blurOut").attr("in", "SourceGraphic").attr("stdDeviation", "8");
       filter.append("feBlend")
-          .attr("in", "SourceGraphic").attr("in2", "blurOut").attr("mode", "normal");
+        .attr("in", "SourceGraphic").attr("in2", "blurOut").attr("mode", "normal");
     }
 
     function appendExpandAll(button) {
       var svg = button.append("svg")
-          .attr("viewBox", "0 0 100 100");
+        .attr("viewBox", "0 0 100 100");
       svg.append("path")
-          .attr("d", "M 5,50 l 40,0 m -20,-20 l 0,40");
+        .attr("d", "M 5,50 l 40,0 m -20,-20 l 0,40");
       svg.append("path")
-          .attr("d", "M 55,50 l 40,0 m -20,-20 l 0,40");
+        .attr("d", "M 55,50 l 40,0 m -20,-20 l 0,40");
     }
 
     function appendCollapseAll(button) {
       var svg = button.append("svg")
-          .attr("viewBox", "0 0 100 100");
+        .attr("viewBox", "0 0 100 100");
       svg.append("path")
-          .attr("d", "M 5,50 l 40,0");
+        .attr("d", "M 5,50 l 40,0");
       svg.append("path")
-          .attr("d", "M 55,50 l 40,0");
+        .attr("d", "M 55,50 l 40,0");
     }
 
     function appendSearchIcon(div) {
       var svg = div.append("svg")
-          .attr("viewBox", "0 0 32 32");
+        .attr("viewBox", "0 0 32 32");
       svg.append("circle")
-          .attr({ cx: "12", cy: "12", r: "10" });
+        .attr({ cx: "12", cy: "12", r: "10" });
       svg.append("path")
-          .attr("d", "M 19.5,19.5 l 10,10");
+        .attr("d", "M 19.5,19.5 l 10,10");
     }
 
     // initialization
-    
+
     d3.select(appendTo).append("div").attr("class", "svg-defs").call(appendDefs);
-    
+
     var chart = d3.select(appendTo).append("div").attr("class", "chart");
 
     expandAllElement = chart.append("button")
-        .attr("class", "expand-all")
-        .call(appendExpandAll);
+      .attr("class", "expand-all")
+      .call(appendExpandAll);
     collapseAllElement = chart.append("button")
-        .attr("class", "collapse-all")
-        .call(appendCollapseAll);
+      .attr("class", "collapse-all")
+      .call(appendCollapseAll);
     searchAreaElement = chart.append("div").attr("class", "search-area").attr("style", "display:none");
     searchResultsElement = searchAreaElement.append("div").attr("class", "search-results");
     searchElement = chart.append("input")
-        .attr({ "class": "search", type: "text", autocomplete: "off" });
+      .attr({ "class": "search", type: "text", autocomplete: "off" });
     chart.append("div")
-        .attr("class", "search-icon")
-        .call(appendSearchIcon);
+      .attr("class", "search-icon")
+      .call(appendSearchIcon);
 
     var chartSvg = chart.append("svg")
-        .attr("preserveAspectRatio", "xMidYMid slice")
-        .attr("viewBox", "-600 -600 1200 1200")
-        .attr("pointer-events", "all");
+      .attr("preserveAspectRatio", "xMidYMid slice")
+      .attr("viewBox", "-600 -600 1200 1200")
+      .attr("pointer-events", "all");
     var handleZoom = chartSvg.append("g").attr("class", "handle-zoom");
     backgroundElement = handleZoom.append("rect").attr("class", "background")
-        .attr("x", "-600").attr("y", "-600").attr("width", "1200").attr("height", "1200")
-        .attr("fill", "transparent");
+      .attr("x", "-600").attr("y", "-600").attr("width", "1200").attr("height", "1200")
+      .attr("fill", "transparent");
     visualization = handleZoom.append("g").attr("class", "visualization");
 
     var relations = visualization.append("g").attr("class", "relations").attr("fill", "none");
     var entities = visualization.append("g").attr("class", "entities");
-    droplocation = visualization.append("rect").attr({x: "0", y: "0", width: "200", height: "30",
-                                                          fill: "none", "stroke-width": "3", stroke: "#888888", rx: "10", ry: "10", "pointer-events": "none", display: "none"});
+    droplocation = visualization.append("rect").attr({
+      x: "0",
+      y: "0",
+      width: "200",
+      height: "30",
+      fill: "none",
+      "stroke-width": "3",
+      stroke: "#888888",
+      rx: "10",
+      ry: "10",
+      "pointer-events": "none",
+      display: "none"
+    });
 
-    focusElement = visualization.append("g").attr({"class": "focus", transform: "translate(0,0)"});
+    focusElement = visualization.append("g").attr({ "class": "focus", transform: "translate(0,0)" });
 
-    focusBorderElement = focusElement.append("rect").attr({"class": "focus-border", x: "-100", y: "-20", width: "200", height: "40", rx: "15", ry: "15", "pointer-events": "none"});
-    offElement = focusElement.append("g").attr({"class": "focus-off", transform: "translate(80,-50)"});
-    offElement.append("circle").attr({cx: "0", cy: "0", r: "20", fill: "rgba(255,255,255,0.5)"});
-    offElement.append("path").attr({"stroke-width": "4", d: "M-10,-10 l20,20 M-10,10 l 20, -20"});
+    focusBorderElement = focusElement.append("rect").attr({ "class": "focus-border", x: "-100", y: "-20", width: "200", height: "40", rx: "15", ry: "15", "pointer-events": "none" });
+    offElement = focusElement.append("g").attr({ "class": "focus-off", transform: "translate(80,-50)" });
+    offElement.append("circle").attr({ cx: "0", cy: "0", r: "20", fill: "rgba(255,255,255,0.5)" });
+    offElement.append("path").attr({ "stroke-width": "4", d: "M-10,-10 l20,20 M-10,10 l 20, -20" });
 
-    expandElement = focusElement.append("g").attr({"class": "focus-expand", transform: "translate(-120,0)"});
-    expandElement.append("circle").attr({cx: "0", cy: "0", r: "20", fill: "rgba(255,255,255,0.5)"});
-    plusElement = expandElement.append("path").attr({"class": "focus-expand-plus", "stroke-width": "4", d: "M -10,0 l 20,0 M 0,-10 l 0,20"});
-    minusElement = expandElement.append("path").attr({"class": "focus-expand-minus", "stroke-width": "4", d: "M -10,0 l 20,0"});
+    expandElement = focusElement.append("g").attr({ "class": "focus-expand", transform: "translate(-120,0)" });
+    expandElement.append("circle").attr({ cx: "0", cy: "0", r: "20", fill: "rgba(255,255,255,0.5)" });
+    plusElement = expandElement.append("path").attr({ "class": "focus-expand-plus", "stroke-width": "4", d: "M -10,0 l 20,0 M 0,-10 l 0,20" });
+    minusElement = expandElement.append("path").attr({ "class": "focus-expand-minus", "stroke-width": "4", d: "M -10,0 l 20,0" });
 
-    pinElement = focusElement.append("g").attr({"class": "focus-pin", transform: "translate(-80,-50)"});
-    pinElement.append("circle").attr({cx: "0", cy: "0", r: "20", fill: "rgba(255,255,255,0.5)"});
-    pinElement.append("path").attr({"class": "pin-path", fill: "#FF4C05", transform: "scale(0.06) translate(-240 -260)", d: pinPath});
-    pinElement.append("path").attr({"stroke-width": "5", stroke: "white", transform: "rotate(45 0 0)", d: "M 0,-18.5 l 0,37"});
-    pinElement.append("path").attr({transform: "rotate(45 0 0)", d: "M 0,-18.5 l 0,37"});
-    
+    pinElement = focusElement.append("g").attr({ "class": "focus-pin", transform: "translate(-80,-50)" });
+    pinElement.append("circle").attr({ cx: "0", cy: "0", r: "20", fill: "rgba(255,255,255,0.5)" });
+    pinElement.append("path").attr({ "class": "pin-path", fill: "#FF4C05", transform: "scale(0.06) translate(-240 -260)", d: pinPath });
+    pinElement.append("path").attr({ "stroke-width": "5", stroke: "white", transform: "rotate(45 0 0)", d: "M 0,-18.5 l 0,37" });
+    pinElement.append("path").attr({ transform: "rotate(45 0 0)", d: "M 0,-18.5 l 0,37" });
+
   }());
-  
-  
+
+
   // Utility functions
 
   var renderPathWithDiamond = function (fromX, fromY, toX, toY) {
@@ -185,26 +207,35 @@ window.createEntityGraph = function (appendTo) {
     var entityWidthHeightRatio = (entity.width - 40) / entity.height; //-40: angle must not be too sharp
     var topOrBottom = adx / ady < entityWidthHeightRatio;
     var toX, toY;
-    if (topOrBottom) {
+    if(topOrBottom) {
       toX = -dx * (entity.height / 2) / ady;
       toY = dy > 0 ? -entity.height / 2 : entity.height / 2;
       // move away from the rounded borders
       var maxX = entity.width / 2 - 10;
-      if (toX > maxX) { toX = maxX; }
-      if (toX < -maxX) { toX = -maxX; }
+      if(toX > maxX) {
+        toX = maxX;
+      }
+      if(toX < -maxX) {
+        toX = -maxX;
+      }
     } else {
       toX = dx > 0 ? -entity.width / 2 : entity.width / 2;
       toY = -dy * (entity.width / 2) / adx;
       // move away from the rounded borders
       var maxY = entity.height / 2 - 10;
-      if (toY > maxY) { toY = maxY; }
-      if (toY < -maxY) { toY = -maxY; }
+      if(toY > maxY) {
+        toY = maxY;
+      }
+      if(toY < -maxY) {
+        toY = -maxY;
+      }
     }
     return [entity.x + toX, entity.y + toY];
   };
 
   var relationTypes = {
-    inherits: { // subclass -> superclass
+    inherits: {
+      // subclass -> superclass
       preferredDx: 0,
       preferredDy: -150, // from below
       dxGrow: 2,
@@ -278,7 +309,7 @@ window.createEntityGraph = function (appendTo) {
         var dy = toNode.y - fromNode.y;
         var dxRel = (dx / dy) / (fromNode.width / (2 * fromNode.height));
         var fromY = fromNode.getBottom();
-        if (dy < 0) {
+        if(dy < 0) {
           // Abnormal direction
           fromY = fromNode.getTop();
           dxRel = -dxRel;
@@ -297,11 +328,11 @@ window.createEntityGraph = function (appendTo) {
       strokeWidth: 2,
       renderPath: function (fromNode, toNode) {
         return relationTypes.ownsMany.renderPath(fromNode, toNode) + "Z";
-  //      var fromX = (fromNode.getRight() - 40);
-  //      var fromY = fromNode.getBottom();
-  //      var toX = toNode.getLeft() + 20;
-  //      var toY = toNode.getTop();
-  //      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
+        //      var fromX = (fromNode.getRight() - 40);
+        //      var fromY = fromNode.getBottom();
+        //      var toX = toNode.getLeft() + 20;
+        //      var toY = toNode.getTop();
+        //      return renderPathWithDiamond(fromX, fromY, toX, toY) + "Z";
       }
     },
     role: {
@@ -319,7 +350,7 @@ window.createEntityGraph = function (appendTo) {
         var toY = toNode.y;
         var dx = toX - fromX;
         var dy = toY - fromY;
-        if (dx === 0.0 || dy === 0.0) {
+        if(dx === 0.0 || dy === 0.0) {
           return "M" + fromX + "," + fromY + " l " + dx + "," + dy + "m 1,1";
         }
         return "M" + fromX + "," + fromY
@@ -360,10 +391,10 @@ window.createEntityGraph = function (appendTo) {
 
   var makeSnapshot = function () {
     var selected = [], i, e;
-    for (i = 0; i < visibleEntities.length; i = i + 1) {
+    for(i = 0; i < visibleEntities.length; i = i + 1) {
       e = visibleEntities[i];
-      if (e.selected) {
-        selected.push({id: e.id, expanded: e.expanded === true, fixed: e.fixed === true, x: e.x, y: e.y});
+      if(e.selected) {
+        selected.push({ id: e.id, expanded: e.expanded === true, fixed: e.fixed === true, x: e.x, y: e.y });
       }
     }
     return {
@@ -371,21 +402,20 @@ window.createEntityGraph = function (appendTo) {
       focus: focus ? focus.id : null
     };
   };
-  
-  var clearAll = function() {
+
+  var clearAll = function () {
     focus = null;
-    for (var i=0; i<visibleEntities.length;i++) {
+    for(var i = 0; i < visibleEntities.length; i++) {
       visibleEntities[i].selected = false;
     }
     markAndSweep();
-  }
-  
-  var applySnapshot = function(snapshot) {
+  };
+  var applySnapshot = function (snapshot) {
     clearAll();
-    for (var i = 0; i<snapshot.selected.length;i++) {
+    for(var i = 0; i < snapshot.selected.length; i++) {
       var selected = snapshot.selected[i];
       var node = graphData.nodesById[selected.id];
-      if (node) {
+      if(node) {
         node.selected = true;
         node.x = node.px = selected.x;
         node.y = node.py = selected.y;
@@ -395,32 +425,31 @@ window.createEntityGraph = function (appendTo) {
         visibleEntities.push(node);
       }
     }
-    for (var edgeType in graphData.edges) {
+    for(var edgeType in graphData.edges) {
       var edges = graphData.edges[edgeType];
-      for (i=0;i<edges.length;i++) {
+      for(i = 0; i < edges.length; i++) {
         var edge = edges[i];
-        if (edge.source.visible && edge.target.visible) {
+        if(edge.source.visible && edge.target.visible) {
           showRelation(edge);
         }
       }
     }
-    for (i=0;i<visibleEntities.length;i++) {
+    for(i = 0; i < visibleEntities.length; i++) {
       var entity = visibleEntities[i];
-      if (entity.expanded) {
+      if(entity.expanded) {
         updateExpanded(entity);
       }
     }
-    if (snapshot.focus) {
+    if(snapshot.focus) {
       focus = graphData.nodesById[snapshot.focus];
     }
-  }
-  
+  };
   var positionFocus = function () {
     focusElement.attr("transform", "translate(" + [focus.x, focus.y] + ")");
   };
 
   var updateFocus = function () {
-    if (!focus) {
+    if(!focus) {
       focusElement.attr("display", "none");
     } else {
       focusElement.attr("display", "");
@@ -459,11 +488,11 @@ window.createEntityGraph = function (appendTo) {
     visualization
       .attr("transform",
         "translate(" + trans + ")"
-        + " scale(" + scale + ")");
+          + " scale(" + scale + ")");
   }
 
   function showRelation(relation) {
-    if (!relation.visible) {
+    if(!relation.visible) {
       relation.visible = true;
       relation.selected = relation.source.selected && relation.target.selected;
       visibleRelations.push(relation);
@@ -471,18 +500,18 @@ window.createEntityGraph = function (appendTo) {
   }
 
   function showEntity(entity, pos, dx, dy, n) {
-    if (!entity.visible) {
+    if(!entity.visible) {
       entity.visible = true;
       entity.x = entity.px = pos.x + (dx / 2) * (1 + n / 100) + dy * (n / 100);
       entity.y = entity.py = pos.y + (dy / 2) * (1 + n / 100) + dx * (n / 100);
       visibleEntities.push(entity);
       entity.incomingRelations.forEach(function (edge) {
-        if (edge.source.visible) {
+        if(edge.source.visible) {
           showRelation(edge);
         }
       });
       entity.outgoingRelations.forEach(function (edge) {
-        if (edge.target.visible) {
+        if(edge.target.visible) {
           showRelation(edge);
         }
       });
@@ -490,7 +519,7 @@ window.createEntityGraph = function (appendTo) {
   }
 
   function hideRelation(relation) {
-    if (relation.visible) {
+    if(relation.visible) {
       relation.visible = false;
       visibleRelations.splice(visibleRelations.indexOf(relation), 1);
     }
@@ -502,7 +531,7 @@ window.createEntityGraph = function (appendTo) {
       entity.visible = entity.selected;
     });
     visibleEntities.forEach(function (entity) {
-      if (entity.expanded) {
+      if(entity.expanded) {
         entity.incomingRelations.forEach(function (edge) {
           edge.source.visible = true;
         });
@@ -511,9 +540,9 @@ window.createEntityGraph = function (appendTo) {
         });
       }
     });
-    for (i = 0; i < visibleEntities.length; i) {
+    for(i = 0; i < visibleEntities.length; i) {
       var entity = visibleEntities[i];
-      if (entity.visible) {
+      if(entity.visible) {
         i = i + 1;
       } else {
         visibleEntities.splice(i, 1);
@@ -524,7 +553,7 @@ window.createEntityGraph = function (appendTo) {
   }
 
   function updateExpanded(d) {
-    if (d.expanded) {
+    if(d.expanded) {
       var n = 0;
       d.incomingRelations.forEach(function (edge) {
         n = n + 1;
@@ -550,7 +579,7 @@ window.createEntityGraph = function (appendTo) {
 
   function off() {
     focus.fixed = false;
-    if (focus.expanded) {
+    if(focus.expanded) {
       expand(); // collapse
     }
     focus.selected = false;
@@ -570,7 +599,7 @@ window.createEntityGraph = function (appendTo) {
 
   function updateFixed(d) {
     var updated = entity.filter(function (d2) { return d2 === d; });
-    if (d.fixed) {
+    if(d.fixed) {
       updated.select(".pin").remove();
       updated.append("path")
         .attr("class", "pin")
@@ -584,7 +613,7 @@ window.createEntityGraph = function (appendTo) {
 
   function expandAll() {
     visibleEntities.forEach(function (d) {
-      if (d.selected && !d.expanded) {
+      if(d.selected && !d.expanded) {
         d.expanded = true;
         updateExpanded(d);
       }
@@ -595,7 +624,7 @@ window.createEntityGraph = function (appendTo) {
 
   function collapseAll() {
     visibleEntities.forEach(function (d) {
-      if (d.expanded) {
+      if(d.expanded) {
         d.expanded = false;
       }
       markAndSweep();
@@ -624,12 +653,12 @@ window.createEntityGraph = function (appendTo) {
     })
     .on("keydown", function () {
       var i, j;
-      if (d3.event.keyCode === 40) {/*down*/
+      if(d3.event.keyCode === 40) { /*down*/
         d3.event.preventDefault();
-        for (i = 0; i < graphData.nodes.length - 1; i = i + 1) {
-          if (graphData.nodes[i].searchActive) {
-            for (j = i + 1; j < graphData.nodes.length; j = j + 1) {
-              if (!graphData.nodes[j].searchHidden) {
+        for(i = 0; i < graphData.nodes.length - 1; i = i + 1) {
+          if(graphData.nodes[i].searchActive) {
+            for(j = i + 1; j < graphData.nodes.length; j = j + 1) {
+              if(!graphData.nodes[j].searchHidden) {
                 graphData.nodes[i].searchActive = false;
                 graphData.nodes[j].searchActive = true;
                 break;
@@ -639,12 +668,12 @@ window.createEntityGraph = function (appendTo) {
           }
         }
         searchResults.classed("active", function (d) { return d.searchActive; });
-      } else if (d3.event.keyCode === 38) { /*up*/
+      } else if(d3.event.keyCode === 38) { /*up*/
         d3.event.preventDefault();
-        for (i = 1; i < graphData.nodes.length; i = i + 1) {
-          if (graphData.nodes[i].searchActive) {
-            for (j = i - 1; j >= 0; j = j - 1) {
-              if (!graphData.nodes[j].searchHidden) {
+        for(i = 1; i < graphData.nodes.length; i = i + 1) {
+          if(graphData.nodes[i].searchActive) {
+            for(j = i - 1; j >= 0; j = j - 1) {
+              if(!graphData.nodes[j].searchHidden) {
                 graphData.nodes[i].searchActive = false;
                 graphData.nodes[j].searchActive = true;
                 break;
@@ -654,10 +683,10 @@ window.createEntityGraph = function (appendTo) {
           }
         }
         searchResults.classed("active", function (d) { return d.searchActive; });
-      } else if (d3.event.keyCode === 13) { /*enter*/
+      } else if(d3.event.keyCode === 13) { /*enter*/
         d3.event.preventDefault();
-        for (i = 0; i < graphData.nodes.length; i = i + 1) {
-          if (graphData.nodes[i].searchActive) {
+        for(i = 0; i < graphData.nodes.length; i = i + 1) {
+          if(graphData.nodes[i].searchActive) {
             showAndFocus(graphData.nodes[i]);
             break;
           }
@@ -665,16 +694,18 @@ window.createEntityGraph = function (appendTo) {
       }
     })
     .on("keyup", function () {
+
       function escapeRegExp(s) {
         return s.replace(/[\-\/\\\^$*+?.()|\[\]{}]/g, '\\$&');
       }
-      if (this.value !== oldSearchValue) {
+
+      if(this.value !== oldSearchValue) {
         oldSearchValue = this.value;
-        var query = new RegExp("\\b" + escapeRegExp(this.value.toLowerCase()), "g");
+        var query = new RegExp(escapeRegExp(this.value.toLowerCase()));
         var first = true;
         graphData.nodes.forEach(function (d) {
           d.searchHidden = !query.test(d.text.toLowerCase());
-          if (d.searchHidden) {
+          if(d.searchHidden) {
             d.searchActive = false;
           } else {
             d.searchActive = first;
@@ -694,9 +725,9 @@ window.createEntityGraph = function (appendTo) {
   offElement.on("click", off);
   pinElement.on("click", unpin);
   backgroundElement.on("mousedown", function () {
-    lastBackgroundMousedownPosition = {x: d3.event.pageX, y: d3.event.pageY};
+    lastBackgroundMousedownPosition = { x: d3.event.pageX, y: d3.event.pageY };
   }).on("mouseup", function () {
-    if (lastBackgroundMousedownPosition && lastBackgroundMousedownPosition.x === d3.event.pageX && lastBackgroundMousedownPosition.y === d3.event.pageY) {
+    if(lastBackgroundMousedownPosition && lastBackgroundMousedownPosition.x === d3.event.pageX && lastBackgroundMousedownPosition.y === d3.event.pageY) {
       focus = null;
       updateFocus();
     }
@@ -732,7 +763,7 @@ window.createEntityGraph = function (appendTo) {
       d3.event.sourceEvent.stopPropagation();
       redraw();
     }).on("dragend", function (d) {
-      if (d.dragMoved) {
+      if(d.dragMoved) {
         d.fixed = true;
         updateFixed(d);
         force.resume();
@@ -746,22 +777,22 @@ window.createEntityGraph = function (appendTo) {
     // Special repelling behavior
     var k = 2 * e.alpha;
     visibleEntities.forEach(function (entity) {
-      if (!entity.fixed) {
+      if(!entity.fixed) {
         visibleEntities.forEach(function (otherEntity) {
-          if (entity !== otherEntity
-              && (entity.px != null) && (otherEntity.px != null)
-              && !(entity.selected && !otherEntity.selected)) { /*non-selected nodes do not repel selected nodes */
+          if(entity !== otherEntity
+            && (entity.px != null) && (otherEntity.px != null)
+            && !(entity.selected && !otherEntity.selected)) { /*non-selected nodes do not repel selected nodes */
             var dy = otherEntity.py - entity.py;
-            if (dy > -repelDistance && dy < repelDistance) {
+            if(dy > -repelDistance && dy < repelDistance) {
               var dx = otherEntity.px - entity.px;
               dx = dx || 10 * Math.random() - 5;
               dy = dy || 10 * Math.random() - 5;
               var ady = Math.abs(dy);
               var adx = Math.abs(dx);
-              if (adx > ady) {
+              if(adx > ady) {
                 var maxShift = (entity.width / 2 + otherEntity.width / 2 - entity.height / 2 - otherEntity.height / 2);
                 var shift = Math.min(adx - ady, maxShift);
-                if (dx > 0) {
+                if(dx > 0) {
                   dx = dx - shift;
                 } else {
                   dx = dx + shift;
@@ -769,7 +800,7 @@ window.createEntityGraph = function (appendTo) {
                 adx = Math.abs(dx);
               }
               var distSq = adx * adx + ady * ady;
-              if (distSq < repelDistance * repelDistance) {
+              if(distSq < repelDistance * repelDistance) {
                 var f = Math.sqrt(repelDistance * repelDistance / distSq) - 1;
                 entity.x -= dx * f * k;
                 entity.y -= dy * f * k;
@@ -792,27 +823,27 @@ window.createEntityGraph = function (appendTo) {
       var diffDy = dy - type.preferredDy;
       var forceX;
       var forceY;
-      if (diffDx > 0) {
+      if(diffDx > 0) {
         forceX = -diffDx * type.dxShrink * k;
       } else {
         forceX = -diffDx * type.dxGrow * k;
       }
-      if (diffDy > 0) {
+      if(diffDy > 0) {
         forceY = -diffDy * type.dyShrink * k;
       } else {
         forceY = -diffDy * type.dyGrow * k;
       }
-      if (!relation.target.fixed && (relation.source.selected || !relation.target.selected)) {
+      if(!relation.target.fixed && (relation.source.selected || !relation.target.selected)) {
         relation.target.x += forceX;
         relation.target.y += forceY;
       }
-      if (!relation.source.fixed && (relation.target.selected || !relation.source.selected)) {
+      if(!relation.source.fixed && (relation.target.selected || !relation.source.selected)) {
         relation.source.x -= forceX;
         relation.source.y -= forceY;
       }
     });
   }
-  
+
   function setPrevious(entity) {
     entity.px = entity.x;
     entity.py = entity.y;
@@ -823,8 +854,8 @@ window.createEntityGraph = function (appendTo) {
     //  if(e.alpha > 0.05) {
     e.alpha = 0.05; // do not start too fast
     //  }
-    for (i = 0; i < 10; i = i + 1) {
-      if (i > 0) {
+    for(i = 0; i < 10; i = i + 1) {
+      if(i > 0) {
         visibleEntities.forEach(setPrevious);
       }
       entitiesRepel(e);
@@ -838,12 +869,12 @@ window.createEntityGraph = function (appendTo) {
     entity
       .attr("transform", function (d) { return "translate(" + [d.x - (d.width / 2), d.y - d.height / 2] + ")"; });
 
-    if (focus) {
+    if(focus) {
       positionFocus();
     }
   }
-  
-  var determineWidth = function(d) {
+
+  var determineWidth = function (d) {
     var text = d3.select(this.parentNode).select("text")[0][0];
     var textWidth = text.getComputedTextLength();
     textWidth = Math.round(textWidth / 20) * 20;
@@ -851,14 +882,12 @@ window.createEntityGraph = function (appendTo) {
     d.width = Math.max(110, textWidth + 30);
     d.height = 30;
     return d.width;
-  }
-  
-  var updateTexts = function() {
-    entity.select("text").text(function(d){return d.text;});
+  };
+  var updateTexts = function () {
+    entity.select("text").text(function (d) { return d.text; });
     entity.select("rect").attr("width", determineWidth);
     entity.select(".text").attr("x", function (d) { return (d.width / 2); });
-  }
-
+  };
   var redraw = function () {
     entity = entity.data(visibleEntities, function (d) { return d.id; });
 
@@ -919,7 +948,7 @@ window.createEntityGraph = function (appendTo) {
 
   function showAndFocus(d) {
     d3.event.preventDefault();
-    if (!d.visible) {
+    if(!d.visible) {
       d.selected = true;
       showEntity(d, { x: 0, y: 0 }, 0, 0, 0);
       redraw();
@@ -942,7 +971,7 @@ window.createEntityGraph = function (appendTo) {
     searchResults.exit().remove();
     searchResults.classed("active", function (d) { return d.searchActive; });
   }
-  
+
   function load(data) {
     var edgeType;
     graphData = data;
@@ -969,10 +998,10 @@ window.createEntityGraph = function (appendTo) {
       node.visible = false;
       node.selected = false;
     });
-    if (graphData.nodes.length > 0) {
+    if(graphData.nodes.length > 0) {
       graphData.nodes[0].searchActive = true;
     }
-    for (edgeType in graphData.edges) {
+    for(edgeType in graphData.edges) {
       var edges = graphData.edges[edgeType];
       edges.forEach(function (edge) {
         graphData.edgesById[edge.id] = edge;
@@ -996,7 +1025,7 @@ window.createEntityGraph = function (appendTo) {
     init: function (data) {
       load(data);
       focus = null;
-      if (graphData.startNodeId) {
+      if(graphData.startNodeId) {
         var startNode = graphData.nodesById[graphData.startNodeId];
         startNode.visible = true;
         startNode.selected = true;
@@ -1009,8 +1038,8 @@ window.createEntityGraph = function (appendTo) {
       redraw();
       fillSearchResults();
     },
-    
-    update: function(newData) {
+
+    update: function (newData) {
       var snapshot = makeSnapshot();
       load(newData);
       applySnapshot(snapshot);
