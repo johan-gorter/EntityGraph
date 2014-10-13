@@ -133,6 +133,29 @@
   stroke: #FF4C05;
 }
 
+.entity-graph .title {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  height: 25px;
+  right: 360px;
+  width: calc(90% - 420px);
+  border: none;
+  font-size: 20px;
+  border-bottom: solid 1px #666666;
+  color: #666666;
+  max-width: 400px;
+  outline: none;
+}
+
+.entity-graph .create-new {
+  right: 360px;
+}
+
+.entity-graph .clone {
+  right: 310px;
+}
+
 .entity-graph .expand-all {
   right: 260px;
 }

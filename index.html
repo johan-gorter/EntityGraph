@@ -4,6 +4,8 @@
 <title>Entity Graph test page</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
   <script src="lib/d3.js"></script>
+  <script src="https://cdn.firebase.com/js/client/1.1.0/firebase.js"></script>
+  <script src="sync-layout.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -34,9 +36,10 @@
     <script>
       
       var entityGraph = window.createEntityGraph(document.body);
-      var graphDataLoaded = function(data) {
+      var graphDataLoaded = function (data) {
+        window.syncLayout(entityGraph);
         entityGraph.init(data);
-      }
+      };
 
       function getQueryStringParameter(name) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -52,7 +55,7 @@
           throw new Error("Not sure if url is an XSS attack: "+modelUrl);
         }
         d3.select("body").append("script").attr("src", modelUrl);
-      }      
+      }
     </script>
 </body>
 </html>
