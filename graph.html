@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<title>Entity Graph test page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <script src="lib/d3.js"></script>
+  <script src="https://cdn.firebase.com/js/client/1.1.0/firebase.js"></script>
+  <script src="sync-layout.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body {
+      font: 13px sans-serif;
+      position: relative;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="entity-graph">
+    
+    <script src="graph.js"></script>
+
+    <script>
+      
+      var entityGraph = window.createEntityGraph(document.body);
+      var graphDataLoaded = function (data) {
+        window.syncLayout(entityGraph);
+        entityGraph.init(data);
+      };
+
+      function getQueryStringParameter(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+        var results = regex.exec(location.search);
+        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+      }    
+      
+      // Read the model= parameter and do a jsonp
+      var modelUrl = getQueryStringParameter("model");
+      if (modelUrl) {
+        if(!/[\w\d\-\.]*/g.test(modelUrl)) {
+          throw new Error("Not sure if url is an XSS attack: "+modelUrl);
+        }
+        d3.select("body").append("script").attr("src", modelUrl);
+      }
+    </script>
+</body>
+</html>

@@ -15,14 +15,16 @@ window.syncLayout = function (graph) {
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
   }
 
-  var layoutsRef = new window.Firebase("https://entitygraph.firebaseio.com/layouts/");
+  var dataRef = new window.Firebase("https://entitygraph.firebaseio.com/data/");
+  var folderRef = new window.Firebase("https://entitygraph.firebaseio.com/folders/root/files/");
 
   var layout = getQueryStringParameter("layout");
   var baseUrl;
+  var created = null;
 
   if(!layout) {
     baseUrl = (location.search ? location.search + "&" : "?") + "layout=";
-    layout = "" + new Date().getTime();
+    layout = "" + Math.random().toString(36).substr(2, 6);
     window.history.pushState(null, "", baseUrl + layout);
   } else {
     baseUrl = location.search.substr(location.search.indexOf("layout=")+7);
@@ -31,11 +33,17 @@ window.syncLayout = function (graph) {
   window.onpopstate = function (evt) {
     layout = getQueryStringParameter("layout");
     layoutRef.off();
+    graph.clear();
     init();
   };
 
   function init() {
-    layoutRef.on("child_added", function (snapshot) {
+    nodesRef.on("child_added", function (snapshot) {
+      var id = snapshot.name();
+      var data = snapshot.val();
+      graph.selectNode(id, data);
+    });
+    nodesRef.on("child_changed", function (snapshot) {
       var id = snapshot.name();
       var data = snapshot.val();
       if (id === "title") {
@@ -44,18 +52,16 @@ window.syncLayout = function (graph) {
         graph.selectNode(id, data);
       }
     });
-    layoutRef.on("child_changed", function (snapshot) {
-      var id = snapshot.name();
-      var data = snapshot.val();
-      if (id === "title") {
-        graph.setTitle(data);
-      } else {
-        graph.selectNode(id, data);
-      }
-    });
-    layoutRef.on("child_removed", function (snapshot) {
+    nodesRef.on("child_removed", function (snapshot) {
       var id = snapshot.name();
       graph.hideNode(id);
+    });
+
+    fileRef.on("value", function (snapshot) {
+      if(snapshot.val()) {
+        graph.setTitle(snapshot.val().title);
+        created = snapshot.created;
+      }
     });
   }
 
@@ -63,27 +69,36 @@ window.syncLayout = function (graph) {
     added: function (node) {
       var update = {};
       update[node.id] = {fixed: node.fixed || false, expanded: node.expanded || false, x: node.x, y: node.y};
-      layoutRef.update(update);
+      nodesRef.update(update);
     },
     removed: function (node) {
-      layoutRef.child(node.id).remove();
+      nodesRef.child(node.id).remove();
     },
     updated: function (node) {
       var update = {};
       update[node.id] = { fixed: node.fixed || false, expanded: node.expanded || false , x: node.x, y: node.y };
-      layoutRef.update(update);
+      nodesRef.update(update);
     },
     titleChanged: function (newTitle) {
-      layoutRef.update({title: newTitle});
+      if(!newTitle) {
+        fileRef.remove();
+      } else {
+        if(!created) {
+          created = new Date().getTime();
+        }
+        fileRef.update({ title: newTitle, created: created }).setPriority(-created);
+      }
     },
     createdNew: function () {
-      layout = "" + new Date().getTime();
+      layout = "" + Math.random().toString(36).substr(2, 6);
       window.history.pushState(null, "", baseUrl + layout);
       layoutRef.off();
       init();
     }
   });
 
-  var layoutRef = layoutsRef.child(layout);
+  var layoutRef = dataRef.child(layout);
+  var nodesRef = layoutRef.child("nodes");
+  var fileRef = folderRef.child(layout);
   init();
 };

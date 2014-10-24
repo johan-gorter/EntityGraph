@@ -1,11 +1,8 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-<title>Entity Graph test page</title>
+  <title>Component Visualizer DeLuxe Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
-  <script src="lib/d3.js"></script>
-  <script src="https://cdn.firebase.com/js/client/1.1.0/firebase.js"></script>
-  <script src="sync-layout.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -29,33 +26,81 @@
   </style>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="entity-graph">
-    
-    <script src="graph.js"></script>
-
+  <body>
+    <header>
+      <h1>Component Visualizer</h1>
+      <button onclick="newVisualization(); return false;">Nieuwe visualisatie</button>
+    </header>
+    <section>
+      <h3>Opgeslagen visualisaties</h3>
+      <div id="list">
+        Bezig met laden...
+      </div>
+    </section>
     <script>
-      
-      var entityGraph = window.createEntityGraph(document.body);
-      var graphDataLoaded = function (data) {
-        window.syncLayout(entityGraph);
-        entityGraph.init(data);
-      };
+    
+      function newVisualization() {
+        document.location = "/graph.html" + (location.search ? (location.search + "&") : "?") + "layout=" + Math.random().toString(36).substr(2, 6);
+      } 
 
-      function getQueryStringParameter(name) {
-        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-        var results = regex.exec(location.search);
-        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-      }    
-      
-      // Read the model= parameter and do a jsonp
-      var modelUrl = getQueryStringParameter("model");
-      if (modelUrl) {
-        if(!/[\w\d\-\.]*/g.test(modelUrl)) {
-          throw new Error("Not sure if url is an XSS attack: "+modelUrl);
-        }
-        d3.select("body").append("script").attr("src", modelUrl);
+      function firebaseLoaded() {
+
+        var d = React.DOM;
+
+        var rootRef = new window.Firebase("https://entitygraph.firebaseio.com/folders/root");
+        var filesRef = rootRef.child("files");
+
+        var printDate = function (date) {
+          return date.getDay() + "-" + (date.getMonth() + 1) + "-" + date.getFullYear() + " "
+          + date.getHours() + ":" + (date.getMinutes() < 10 ? "0" : "") + date.getMinutes();
+        };
+
+        var eachKey = function (data, callback) {
+          var result = [];
+          for(var key in data) {
+            result.push(callback(key, data[key]));
+          }
+          return result;
+        };
+
+        var FilesList = React.createClass({
+          mixins: [ReactFireMixin],
+
+          getInitialState: function () {
+            return { files: {} };
+          },
+
+          componentWillMount: function () {
+            this.bindAsObject(filesRef.limit(1000), "files");
+          },
+
+          render: function () {
+            return d.table(null,
+              d.thead(null,
+                d.tr(null,
+                  d.th(null, "Titel"),
+                  d.th(null, "Aangemaakt op"),
+                  d.th(null, "")
+                )
+              ),
+              d.tbody(null, eachKey(this.state.files, function (id, file) {
+                return d.tr(null,
+                  d.td(null,
+                    d.a({href:"/graph.html"+(location.search?(location.search+"&"):"?")+"layout="+id}, file.title)
+                  ),
+                  d.td(null, file.created?printDate(new Date(file.created)):"?"),
+                  d.td(null, "")
+                );
+              }))
+            );
+          }
+        });
+
+        React.renderComponent(new FilesList(), document.getElementById("list"));
       }
     </script>
-</body>
+    <script src="lib/react.js"></script>
+    <script src="lib/reactfire.js"></script>
+    <script async src="https://cdn.firebase.com/js/client/1.1.0/firebase.js" onload="firebaseLoaded()"></script>
+  </body>
 </html>

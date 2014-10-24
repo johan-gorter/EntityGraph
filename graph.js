@@ -439,6 +439,10 @@ window.createEntityGraph = function (appendTo) {
     };
   };
 
+  var setTitle = function (newTitle) {
+    title.property("value", newTitle);
+  };
+
   var clearAll = function () {
     focus = null;
     for(var i = 0; i < visibleEntities.length; i++) {
@@ -446,6 +450,7 @@ window.createEntityGraph = function (appendTo) {
     }
     markAndSweep();
   };
+
   var applySnapshot = function (snapshot) {
     clearAll();
     for(var i = 0; i < snapshot.selected.length; i++) {
@@ -1121,9 +1126,9 @@ window.createEntityGraph = function (appendTo) {
       listener = onlyListener;
     },
 
-    setTitle: function (newTitle) {
-      title.property("value", newTitle);
-    },
+    setTitle: setTitle,
+
+    clear: clearAll,
 
     selectNode: function (id, data) {
       var node = graphData.nodesById[id];
