@@ -27,7 +27,7 @@ window.syncLayout = function (graph) {
     layout = "" + Math.random().toString(36).substr(2, 6);
     window.history.pushState(null, "", baseUrl + layout);
   } else {
-    baseUrl = location.search.substr(location.search.indexOf("layout=")+7);
+    baseUrl = location.search.substr(0, location.search.indexOf("layout=")+7);
   }
 
   window.onpopstate = function (evt) {
@@ -60,7 +60,10 @@ window.syncLayout = function (graph) {
     fileRef.on("value", function (snapshot) {
       if(snapshot.val()) {
         graph.setTitle(snapshot.val().title);
-        created = snapshot.created;
+        created = snapshot.val().created;
+      } else {
+        graph.setTitle("");
+        created = new Date().getTime();
       }
     });
   }
@@ -86,13 +89,19 @@ window.syncLayout = function (graph) {
         if(!created) {
           created = new Date().getTime();
         }
-        fileRef.update({ title: newTitle, created: created }).setPriority(-created);
+        fileRef.update({ title: newTitle, created: created });
+        fileRef.setPriority(-created);
       }
     },
     createdNew: function () {
+      created = new Date().getTime();
       layout = "" + Math.random().toString(36).substr(2, 6);
       window.history.pushState(null, "", baseUrl + layout);
-      layoutRef.off();
+      nodesRef.off();
+      fileRef.off();
+      layoutRef = dataRef.child(layout);
+      nodesRef = layoutRef.child("nodes");
+      fileRef = folderRef.child(layout);
       init();
     }
   });

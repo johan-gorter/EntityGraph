@@ -12,6 +12,8 @@ window.createEntityGraph = function (appendTo) {
   // constants
   var width = 1200;
   var height = 1200;
+  var trans = [0, 0];
+  var scale = 1;
   var repelDistance = 80;
   var pinPath = "M150.061,232.739l-67.232,67.868  c-3.363,3.267-5.453,7.898-5.453,12.991c0,9.991,8.083,18.173,17.989,18.173h127.379" +
     "V445.34c0,12.536,10.177,22.711,22.713,22.711  c12.537,0,22.715-10.175,22.715-22.711V331.771h136.46c9.899,0,17.992-8.182,17.992-18.173" +
@@ -124,7 +126,7 @@ window.createEntityGraph = function (appendTo) {
 
     var chart = d3.select(appendTo).append("div").attr("class", "chart");
 
-    title = chart.append("input").attr("type", "text")
+    title = chart.append("input").attr("type", "text").attr("title", "Name to store this layout under, make empty to remove.")
       .attr("class", "title");
 
     createNewElement = chart.append("button")
@@ -446,6 +448,7 @@ window.createEntityGraph = function (appendTo) {
   var clearAll = function () {
     focus = null;
     for(var i = 0; i < visibleEntities.length; i++) {
+      visibleEntities[i].expanded = false;
       visibleEntities[i].selected = false;
     }
     markAndSweep();
@@ -524,8 +527,8 @@ window.createEntityGraph = function (appendTo) {
   }
 
   function rescale() {
-    var trans = d3.event.translate;
-    var scale = d3.event.scale;
+    trans = d3.event.translate;
+    scale = d3.event.scale;
     visualization
       .attr("transform",
         "translate(" + trans + ")"
@@ -598,7 +601,6 @@ window.createEntityGraph = function (appendTo) {
   }
 
   function updateExpanded(d) {
-    listener.updated(d);
     if(d.expanded) {
       var n = 0;
       d.incomingRelations.forEach(function (edge) {
@@ -619,6 +621,7 @@ window.createEntityGraph = function (appendTo) {
   function expand() {
     focus.expanded = !focus.expanded;
     updateExpanded(focus);
+    listener.updated(focus);
     redraw();
     force.resume();
   }
@@ -662,10 +665,17 @@ window.createEntityGraph = function (appendTo) {
   function createNew() {
     listener.createdNew();
     clearAll();
+    redraw();
   }
 
   function clone() {
-    
+    setTitle("");
+    listener.createdNew();
+    visibleEntities.forEach(function (d) {
+      if(d.selected) {
+        listener.updated(d);
+      }
+    });
   }
 
   function expandAll() {
@@ -673,6 +683,7 @@ window.createEntityGraph = function (appendTo) {
       if(d.selected && !d.expanded) {
         d.expanded = true;
         updateExpanded(d);
+        listener.updated(d);
       }
       redraw();
       force.resume();
@@ -818,6 +829,7 @@ window.createEntityGraph = function (appendTo) {
       droplocation.attr("transform", "translate(" + [d.px - (d.width / 2), d.py - (d.height / 2)] + ")");
       d.px = snapToGrid(d.px);
       d.py = snapToGrid(d.py);
+      listener.updated(d);
     }).on("dragstart", function (d) {
       focus = null;
       updateFocus();
@@ -1014,8 +1026,8 @@ window.createEntityGraph = function (appendTo) {
     d3.event.preventDefault();
     if(!d.visible) {
       d.selected = true;
-      showEntity(d, { x: 0, y: 0 }, 0, 0, 0);
-      listener.added(entity);
+      showEntity(d, { x: -trans[0]/scale, y: -trans[1]/scale }, 0, 0, 0);
+      listener.added(d);
       redraw();
     }
     focus = d;
@@ -1143,9 +1155,7 @@ window.createEntityGraph = function (appendTo) {
         node.fixed = data.fixed;
         node.x = node.px = data.x;
         node.y = node.py = data.y;
-        if(data.expanded) {
-          updateExpanded(node);
-        }
+        updateExpanded(node);
         redraw();
         force.resume();
       }
@@ -1159,7 +1169,11 @@ window.createEntityGraph = function (appendTo) {
           node.expanded = false;
           updateExpanded(node);
         }
-        focus.selected = false;
+        node.selected = false;
+        if(focus === node) {
+          focus = null;
+          updateFocus();
+        }
         markAndSweep();
         updateFocus();
         redraw();
