@@ -452,6 +452,7 @@ window.createEntityGraph = function (appendTo) {
       visibleEntities[i].selected = false;
     }
     markAndSweep();
+    searchElement[0][0].focus();
   };
 
   var applySnapshot = function (snapshot) {
@@ -820,6 +821,7 @@ window.createEntityGraph = function (appendTo) {
   visibleEntities = force.nodes();
   visibleRelations = [];
 
+  var lastDragUpdateTime = 0;
   var drag = force.drag()
     .on("drag", function (d, i) {
       d.dragMoved = true;
@@ -829,7 +831,11 @@ window.createEntityGraph = function (appendTo) {
       droplocation.attr("transform", "translate(" + [d.px - (d.width / 2), d.py - (d.height / 2)] + ")");
       d.px = snapToGrid(d.px);
       d.py = snapToGrid(d.py);
-      listener.updated(d);
+      var time = new Date().getTime();
+      if(time > lastDragUpdateTime + 100) {
+        listener.updated(d);
+        lastDragUpdateTime = time;
+      }
     }).on("dragstart", function (d) {
       focus = null;
       updateFocus();
@@ -1104,7 +1110,7 @@ window.createEntityGraph = function (appendTo) {
       focus = null;
       if(graphData.startNodeId) {
         var startNode = graphData.nodesById[graphData.startNodeId];
-        if (startNode) {
+        if(startNode) {
           if(!startNode.visible) {
             startNode.visible = true;
             visibleEntities.push(startNode);
@@ -1116,6 +1122,8 @@ window.createEntityGraph = function (appendTo) {
           force.nodes(visibleEntities);
           focus = startNode;
         }
+      } else {
+        searchElement[0][0].focus();
       }
       redraw();
       fillSearchResults();

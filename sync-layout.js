@@ -15,8 +15,13 @@ window.syncLayout = function (graph) {
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
   }
 
-  var dataRef = new window.Firebase("https://entitygraph.firebaseio.com/data/");
-  var folderRef = new window.Firebase("https://entitygraph.firebaseio.com/folders/root/files/");
+  var realm = getQueryStringParameter("realm") || getQueryStringParameter("instance") || "default";
+  var rootRef = new window.Firebase("https://entitygraph.firebaseio.com/").child(realm);
+  var dataRef = rootRef.child("data");
+  var folderRef = rootRef.child("folders/root/files");
+  var layoutRef;
+  var nodesRef;
+  var fileRef;
 
   var layout = getQueryStringParameter("layout");
   var baseUrl;
@@ -32,12 +37,20 @@ window.syncLayout = function (graph) {
 
   window.onpopstate = function (evt) {
     layout = getQueryStringParameter("layout");
-    layoutRef.off();
     graph.clear();
-    init();
+    reset();
   };
 
+  function reset() {
+    nodesRef.off();
+    fileRef.off();
+    init();
+  }
+
   function init() {
+    layoutRef = dataRef.child(layout);
+    nodesRef = layoutRef.child("nodes");
+    fileRef = folderRef.child(layout);
     nodesRef.on("child_added", function (snapshot) {
       var id = snapshot.name();
       var data = snapshot.val();
@@ -97,17 +110,9 @@ window.syncLayout = function (graph) {
       created = new Date().getTime();
       layout = "" + Math.random().toString(36).substr(2, 6);
       window.history.pushState(null, "", baseUrl + layout);
-      nodesRef.off();
-      fileRef.off();
-      layoutRef = dataRef.child(layout);
-      nodesRef = layoutRef.child("nodes");
-      fileRef = folderRef.child(layout);
-      init();
+      reset();
     }
   });
 
-  var layoutRef = dataRef.child(layout);
-  var nodesRef = layoutRef.child("nodes");
-  var fileRef = folderRef.child(layout);
   init();
 };

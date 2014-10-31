@@ -3,6 +3,8 @@
 <head>
   <title>Component Visualizer DeLuxe Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
   <style>
     * {
       box-sizing: border-box;
@@ -22,7 +24,74 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+      background-color: #CCCCCC;
     }
+
+    a, a:visited {
+      color: #444444;
+    }
+
+    button {
+      margin: 10px 10px 20px 10px;
+      padding: 10px;
+      font-weight: bold;
+      
+    }
+
+    #list {
+      padding: 10px;
+      box-shadow: 0 2px 5px 0 rgba(0,0,0,.26);
+      background-color: white;
+    }
+
+    table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+    }
+
+    th {
+      padding: 5px 0 5px 0;
+    }
+
+    td {
+      border-top: solid 1px #CCCCCC;
+      padding: 5px 0 5px 0;
+    }
+
+    .title {
+      text-align: left;
+      overflow: hidden;
+    }
+
+    .title > a {
+      text-overflow: ellipsis;
+    }
+
+
+    .created-on {
+      width: 150px;
+      text-align: right;
+    }
+
+    td.created-on {
+      color: #888888;
+    }
+
+    td {
+      line-height: 25px;
+      font-size: 18px;
+      position: relative;
+    }
+
+    td > a {
+      display: block;
+      width: 100%;
+    }
+
   </style>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -32,7 +101,6 @@
       <button onclick="newVisualization(); return false;">Nieuwe visualisatie</button>
     </header>
     <section>
-      <h3>Opgeslagen visualisaties</h3>
       <div id="list">
         Bezig met laden...
       </div>
@@ -45,9 +113,17 @@
 
       function firebaseLoaded() {
 
+        function getQueryStringParameter(name) {
+          name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+          var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+          var results = regex.exec(location.search);
+          return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
         var d = React.DOM;
 
-        var rootRef = new window.Firebase("https://entitygraph.firebaseio.com/folders/root");
+        var realm = getQueryStringParameter("realm") || getQueryStringParameter("instance") || "default";
+        var rootRef = new window.Firebase("https://entitygraph.firebaseio.com/").child(realm).child("folders/root");
         var filesRef = rootRef.child("files");
 
         var printDate = function (date) {
@@ -78,18 +154,16 @@
             return d.table(null,
               d.thead(null,
                 d.tr(null,
-                  d.th(null, "Titel"),
-                  d.th(null, "Aangemaakt op"),
-                  d.th(null, "")
+                  d.th({ className:"title" }, "Titel"),
+                  d.th({ className: "created-on" }, "Aangemaakt op")
                 )
               ),
               d.tbody(null, eachKey(this.state.files, function (id, file) {
                 return d.tr(null,
-                  d.td(null,
+                  d.td({ className: "title" },
                     d.a({href:"/graph.html"+(location.search?(location.search+"&"):"?")+"layout="+id}, file.title)
                   ),
-                  d.td(null, file.created?printDate(new Date(file.created)):"?"),
-                  d.td(null, "")
+                  d.td({ className: "created-on" }, file.created ? printDate(new Date(file.created)) : "?")
                 );
               }))
             );
